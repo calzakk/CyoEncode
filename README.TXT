@@ -31,6 +31,8 @@ using GCC.
 
 For Windows developers, Visual Studio projects are included.
 
+For QT developers, a project include file (CyoEncode.pri) is included.
+
 -------------------------------------------------------------------------------
 3. Release Notes
 -------------------------------------------------------------------------------

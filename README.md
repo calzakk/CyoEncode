@@ -14,6 +14,8 @@ using GCC.
 
 For Windows developers, a Visual Studio project is included.
 
+For QT developers, a project include file (`CyoEncode.pri`) is included.
+
 ## Platforms
 
 CyoEncode requires a C++98 compiler, and is known to build on the following platforms:
