@@ -164,6 +164,7 @@
     <ClInclude Include="CyoDecode.hpp" />
     <ClInclude Include="CyoEncode.h" />
     <ClInclude Include="CyoEncode.hpp" />
+    <ClInclude Include="testdata.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

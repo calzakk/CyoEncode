@@ -1,7 +1,7 @@
 /*
  * test2.cpp - part of the CyoEncode library
  * 
- * Copyright (c) 2009-2016, Graham Bull.
+ * Copyright (c) 2009-2017, Graham Bull.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,7 @@
 
 #include "CyoEncode.hpp"
 #include "CyoDecode.hpp"
+#include "testdata.h"
 
 #include <iostream>
 #include <string>
@@ -61,6 +62,7 @@
 #define TEST_BASE16(str,expected) TEST_BASExx(16,str,expected)
 #define TEST_BASE32(str,expected) TEST_BASExx(32,str,expected)
 #define TEST_BASE64(str,expected) TEST_BASExx(64,str,expected)
+#define TEST_BASE85(str,expected) TEST_BASExx(85,str,expected)
 
 /*****************************************************************************/
 
@@ -90,6 +92,7 @@
 #define TEST_BASE16_BLOCK(str,expected) TEST_BASExx_BLOCK(16,str,expected,2,*(const byte_t*))
 #define TEST_BASE32_BLOCK(str,expected) TEST_BASExx_BLOCK(32,str,expected,8,(const byte_t*))
 #define TEST_BASE64_BLOCK(str,expected) TEST_BASExx_BLOCK(64,str,expected,4,(const byte_t*))
+#define TEST_BASE85_BLOCK(str,expected) TEST_BASExx_BLOCK(85,str,expected,5,(const byte_t*))
 
 /*****************************************************************************/
 
@@ -114,6 +117,7 @@
 #define CHECK_INVALID_BASE16(enc,res) CHECK_INVALID_BASExx(16,enc,res)
 #define CHECK_INVALID_BASE32(enc,res) CHECK_INVALID_BASExx(32,enc,res)
 #define CHECK_INVALID_BASE64(enc,res) CHECK_INVALID_BASExx(64,enc,res)
+#define CHECK_INVALID_BASE85(enc,res) CHECK_INVALID_BASExx(85,enc,res)
 
 /*****************************************************************************/
 
@@ -128,7 +132,7 @@ int run_cpp_tests()
     int valid = 0;
     bool failedTests = false;
 
-    std::cout << "Running tests..." << std::endl;
+    std::cout << "Running C++ tests..." << std::endl;
 
     /* Encode using Base64 */
 
@@ -164,62 +168,50 @@ int run_cpp_tests()
     }
     std::cout << "Decoded = '" << decodedStr << "'" << std::endl;
 
-    // Test vectors from RFC 4648
+    /* Tests */
 
-    TEST_BASE16("", "");
-    TEST_BASE16("f", "66");
-    TEST_BASE16("fo", "666F");
-    TEST_BASE16("foo", "666F6F");
-    TEST_BASE16("foob", "666F6F62");
-    TEST_BASE16("fooba", "666F6F6261");
-    TEST_BASE16("foobar", "666F6F626172");
+    for (const TestData* base16 = TestDataBase16; base16->data != NULL; ++base16) {
+        TEST_BASE16(base16->data, base16->encoded);
+    }
+    for (const TestData* base32 = TestDataBase32; base32->data != NULL; ++base32) {
+        TEST_BASE32(base32->data, base32->encoded);
+    }
+    for (const TestData* base64 = TestDataBase64; base64->data != NULL; ++base64) {
+        TEST_BASE64(base64->data, base64->encoded);
+    }
+    for (const TestData* base85 = TestDataBase85; base85->data != NULL; ++base85) {
+        TEST_BASE85(base85->data, base85->encoded);
+    }
 
-    TEST_BASE32("", "");
-    TEST_BASE32("f", "MY======");
-    TEST_BASE32("fo", "MZXQ====");
-    TEST_BASE32("foo", "MZXW6===");
-    TEST_BASE32("foob", "MZXW6YQ=");
-    TEST_BASE32("fooba", "MZXW6YTB");
-    TEST_BASE32("foobar", "MZXW6YTBOI======");
+    /* Blocks */
 
-    TEST_BASE64("", "");
-    TEST_BASE64("f", "Zg==");
-    TEST_BASE64("fo", "Zm8=");
-    TEST_BASE64("foo", "Zm9v");
-    TEST_BASE64("foob", "Zm9vYg==");
-    TEST_BASE64("fooba", "Zm9vYmE=");
-    TEST_BASE64("foobar", "Zm9vYmFy");
+    for (const TestData* base16 = TestBlocksBase16; base16->data != NULL; ++base16) {
+        TEST_BASE16_BLOCK(base16->data, base16->encoded);
+    }
+    for (const TestData* base32 = TestBlocksBase32; base32->data != NULL; ++base32) {
+        TEST_BASE32_BLOCK(base32->data, base32->encoded);
+    }
+    for (const TestData* base64 = TestBlocksBase64; base64->data != NULL; ++base64) {
+        TEST_BASE64_BLOCK(base64->data, base64->encoded);
+    }
+    for (const TestData* base85 = TestBlocksBase85; base85->data != NULL; ++base85) {
+        TEST_BASE85_BLOCK(base85->data, base85->encoded);
+    }
 
-    // Other tests
+    /* Invalid */
 
-    TEST_BASE16_BLOCK("\0", "00");
-    TEST_BASE16_BLOCK("1", "31");
-    TEST_BASE16_BLOCK("A", "41");
-    TEST_BASE16_BLOCK("\xFF", "FF");
-
-    TEST_BASE32_BLOCK("\0\0\0\0\0", "AAAAAAAA");
-    TEST_BASE32_BLOCK("12345", "GEZDGNBV");
-    TEST_BASE32_BLOCK("ABCDE", "IFBEGRCF");
-    TEST_BASE32_BLOCK("\xFF\xFF\xFF\xFF\xFF", "77777777");
-
-    TEST_BASE64_BLOCK("\0\0\0", "AAAA");
-    TEST_BASE64_BLOCK("123", "MTIz");
-    TEST_BASE64_BLOCK("ABC", "QUJD");
-    TEST_BASE64_BLOCK("\xFF\xFF\xFF", "////");
-
-    CHECK_INVALID_BASE16("1", -1);
-    CHECK_INVALID_BASE16("123", -1);
-    CHECK_INVALID_BASE16("1G", -2);
-
-    CHECK_INVALID_BASE32("A", -1);
-    CHECK_INVALID_BASE32("ABCDEFG", -1);
-    CHECK_INVALID_BASE32("ABCDEFG1", -2);
-    CHECK_INVALID_BASE32("A=======", -2);
-
-    CHECK_INVALID_BASE64("A", -1);
-    CHECK_INVALID_BASE64("ABCDE", -1);
-    CHECK_INVALID_BASE64("A&B=", -2);
-    CHECK_INVALID_BASE64("A===", -2);
+    for (const TestInvalid* base16 = TestInvalidBase16; base16->data != NULL; ++base16) {
+        CHECK_INVALID_BASE16(base16->data, base16->result);
+    }
+    for (const TestInvalid* base32 = TestInvalidBase32; base32->data != NULL; ++base32) {
+        CHECK_INVALID_BASE32(base32->data, base32->result);
+    }
+    for (const TestInvalid* base64 = TestInvalidBase64; base64->data != NULL; ++base64) {
+        CHECK_INVALID_BASE64(base64->data, base64->result);
+    }
+    for (const TestInvalid* base85 = TestInvalidBase85; base85->data != NULL; ++base85) {
+        CHECK_INVALID_BASE85(base85->data, base85->result);
+    }
 
     if (!failedTests)
         std::cout << "*** All C++ tests passed ***" << std::endl;

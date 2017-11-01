@@ -1,7 +1,7 @@
 /*
  * test1.c - part of the CyoEncode library
  * 
- * Copyright (c) 2009-2016, Graham Bull.
+ * Copyright (c) 2009-2017, Graham Bull.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,7 @@
 
 #include "CyoEncode.h"
 #include "CyoDecode.h"
+#include "testdata.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -49,8 +50,7 @@
         goto exit; \
     } \
     valid = cyoBase##base##Validate( encoded, strlen( encoded )); \
-    if (valid < 0) \
-    { \
+    if (valid < 0) { \
         printf( "\n*** ERROR: Unable to validate encoding (error %d) ***\n", valid ); \
         goto exit; \
     } \
@@ -60,6 +60,7 @@
 #define TEST_BASE16(str,expected) TEST_BASExx(16,str,expected)
 #define TEST_BASE32(str,expected) TEST_BASExx(32,str,expected)
 #define TEST_BASE64(str,expected) TEST_BASExx(64,str,expected)
+#define TEST_BASE85(str,expected) TEST_BASExx(85,str,expected)
 
 /*****************************************************************************/
 
@@ -76,8 +77,7 @@
         goto exit; \
     } \
     valid = cyoBase##base##Validate( encoded, output ); \
-    if (valid < 0) \
-    { \
+    if (valid < 0) { \
         printf( "\n*** ERROR: Unable to validate encoding (error %d) ***\n", valid ); \
         goto exit; \
     } \
@@ -87,20 +87,26 @@
 #define TEST_BASE16_BLOCK(str,expected) TEST_BASExx_BLOCK(16,str,expected,2)
 #define TEST_BASE32_BLOCK(str,expected) TEST_BASExx_BLOCK(32,str,expected,8)
 #define TEST_BASE64_BLOCK(str,expected) TEST_BASExx_BLOCK(64,str,expected,4)
+#define TEST_BASE85_BLOCK(str,expected) TEST_BASExx_BLOCK(85,str,expected,5)
 
 /*****************************************************************************/
 
 #define CHECK_INVALID_BASExx(base,str,res) \
     printf( "CHECK_INVALID_BASE%s('%s')=%d", #base, str, res ); \
     valid = cyoBase##base##Validate( str, strlen( str )); \
-    if (valid == 0) \
-    { \
+    if (valid == 0) { \
         printf( "\n*** ERROR: This is a valid encoding! ***\n" ); \
         goto exit; \
     } \
-    if (valid != res) \
-    { \
+    if (valid != res) { \
         printf( "\n*** ERROR: Expected a different return code! (%d) ***\n", valid ); \
+        goto exit; \
+    } \
+    required = cyoBase##base##DecodeGetLength( strlen( str )); \
+    decoded = (char*)malloc(required); \
+    size = cyoBase##base##Decode( decoded, str, strlen( str )); \
+    if (size != 0) { \
+        printf( "\n*** ERROR: This is a valid encoding! ***\n" ); \
         goto exit; \
     } \
     printf( " [passed]\n" ); \
@@ -108,6 +114,7 @@
 #define CHECK_INVALID_BASE16(enc,res) CHECK_INVALID_BASExx(16,enc,res)
 #define CHECK_INVALID_BASE32(enc,res) CHECK_INVALID_BASExx(32,enc,res)
 #define CHECK_INVALID_BASE64(enc,res) CHECK_INVALID_BASExx(64,enc,res)
+#define CHECK_INVALID_BASE85(enc,res) CHECK_INVALID_BASExx(85,enc,res)
 
 /*****************************************************************************/
 
@@ -115,6 +122,7 @@ int run_c_tests(void)
 {
     const char* const original = "A wise man speaks when he has something to say";
     size_t required = 0;
+    size_t size = 0;
     char* encoded = NULL;
     char* decoded = NULL;
     int valid = 0;
@@ -169,62 +177,50 @@ int run_c_tests(void)
     free(decoded);
     decoded = NULL;
 
-    /* Test vectors from RFC 4648 */
+    /* Tests */
 
-    TEST_BASE16("", "");
-    TEST_BASE16("f", "66");
-    TEST_BASE16("fo", "666F");
-    TEST_BASE16("foo", "666F6F");
-    TEST_BASE16("foob", "666F6F62");
-    TEST_BASE16("fooba", "666F6F6261");
-    TEST_BASE16("foobar", "666F6F626172");
+    for (const struct TestData* base16 = TestDataBase16; base16->data != NULL; ++base16) {
+        TEST_BASE16(base16->data, base16->encoded);
+    }
+    for (const struct TestData* base32 = TestDataBase32; base32->data != NULL; ++base32) {
+        TEST_BASE32(base32->data, base32->encoded);
+    }
+    for (const struct TestData* base64 = TestDataBase64; base64->data != NULL; ++base64) {
+        TEST_BASE64(base64->data, base64->encoded);
+    }
+    for (const struct TestData* base85 = TestDataBase85; base85->data != NULL; ++base85) {
+        TEST_BASE85(base85->data, base85->encoded);
+    }
 
-    TEST_BASE32("", "");
-    TEST_BASE32("f", "MY======");
-    TEST_BASE32("fo", "MZXQ====");
-    TEST_BASE32("foo", "MZXW6===");
-    TEST_BASE32("foob", "MZXW6YQ=");
-    TEST_BASE32("fooba", "MZXW6YTB");
-    TEST_BASE32("foobar", "MZXW6YTBOI======");
+    /* Blocks */
 
-    TEST_BASE64("", "");
-    TEST_BASE64("f", "Zg==");
-    TEST_BASE64("fo", "Zm8=");
-    TEST_BASE64("foo", "Zm9v");
-    TEST_BASE64("foob", "Zm9vYg==");
-    TEST_BASE64("fooba", "Zm9vYmE=");
-    TEST_BASE64("foobar", "Zm9vYmFy");
+    for (const struct TestData* base16 = TestBlocksBase16; base16->data != NULL; ++base16) {
+        TEST_BASE16_BLOCK(base16->data, base16->encoded);
+    }
+    for (const struct TestData* base32 = TestBlocksBase32; base32->data != NULL; ++base32) {
+        TEST_BASE32_BLOCK(base32->data, base32->encoded);
+    }
+    for (const struct TestData* base64 = TestBlocksBase64; base64->data != NULL; ++base64) {
+        TEST_BASE64_BLOCK(base64->data, base64->encoded);
+    }
+    for (const struct TestData* base85 = TestBlocksBase85; base85->data != NULL; ++base85) {
+        TEST_BASE85_BLOCK(base85->data, base85->encoded);
+    }
 
-    /* Other tests */
+    /* Invalid */
 
-    TEST_BASE16_BLOCK("\0", "00");
-    TEST_BASE16_BLOCK("1", "31");
-    TEST_BASE16_BLOCK("A", "41");
-    TEST_BASE16_BLOCK("\xFF", "FF");
-
-    TEST_BASE32_BLOCK("\0\0\0\0\0", "AAAAAAAA");
-    TEST_BASE32_BLOCK("12345", "GEZDGNBV");
-    TEST_BASE32_BLOCK("ABCDE", "IFBEGRCF");
-    TEST_BASE32_BLOCK("\xFF\xFF\xFF\xFF\xFF", "77777777");
-
-    TEST_BASE64_BLOCK("\0\0\0", "AAAA");
-    TEST_BASE64_BLOCK("123", "MTIz");
-    TEST_BASE64_BLOCK("ABC", "QUJD");
-    TEST_BASE64_BLOCK("\xFF\xFF\xFF", "////");
-
-    CHECK_INVALID_BASE16("1", -1);
-    CHECK_INVALID_BASE16("123", -1);
-    CHECK_INVALID_BASE16("1G", -2);
-
-    CHECK_INVALID_BASE32("A", -1);
-    CHECK_INVALID_BASE32("ABCDEFG", -1);
-    CHECK_INVALID_BASE32("ABCDEFG1", -2);
-    CHECK_INVALID_BASE32("A=======", -2);
-
-    CHECK_INVALID_BASE64("A", -1);
-    CHECK_INVALID_BASE64("ABCDE", -1);
-    CHECK_INVALID_BASE64("A&B=", -2);
-    CHECK_INVALID_BASE64("A===", -2);
+    for (const struct TestInvalid* base16 = TestInvalidBase16; base16->data != NULL; ++base16) {
+        CHECK_INVALID_BASE16(base16->data, base16->result);
+    }
+    for (const struct TestInvalid* base32 = TestInvalidBase32; base32->data != NULL; ++base32) {
+        CHECK_INVALID_BASE32(base32->data, base32->result);
+    }
+    for (const struct TestInvalid* base64 = TestInvalidBase64; base64->data != NULL; ++base64) {
+        CHECK_INVALID_BASE64(base64->data, base64->result);
+    }
+    for (const struct TestInvalid* base85 = TestInvalidBase85; base85->data != NULL; ++base85) {
+        CHECK_INVALID_BASE85(base85->data, base85->result);
+    }
 
     printf("*** All C tests passed ***\n");
     retcode = 0;
