@@ -1,7 +1,7 @@
 /*
  * CyoDecode.hpp - part of the CyoEncode library
  *
- * Copyright (c) 2009-2016, Graham Bull.
+ * Copyright (c) 2009-2017, Graham Bull.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
