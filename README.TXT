@@ -2,11 +2,11 @@
 CyoEncode
 https://github.com/calzakk/CyoEncode
 
-Copyright (c) 2009-2016, Graham Bull. All rights reserved.
+Copyright (c) 2009-2017, Graham Bull. All rights reserved.
 ===============================================================================
 
-Version 1.1.1
-Release Date 25th February 2014
+Version 1.2.0
+Release Date 1st November 2017
 
 -------------------------------------------------------------------------------
 1. License
@@ -24,7 +24,7 @@ as long as you respect the original copyright.
 Simply copy the required source files (CyoEncode.h/cpp and CyoDecode.h/cpp)
 into your C/C++ project.
 
-Examples of usage can be found in the test.c file.
+Examples of usage can be found in test.c and test.cpp.
 
 For Unix/Linux developers, there's a shell script that will build the test
 using GCC.
@@ -36,6 +36,10 @@ For QT developers, a project include file (CyoEncode.pri) is included.
 -------------------------------------------------------------------------------
 3. Release Notes
 -------------------------------------------------------------------------------
+
+1.2.0 - 1st November 2017
+- Prevent non-trailing padding when decoding Base32 and Base64.
+- Centralized the test data; additional tests.
 
 1.1.1 - 25th February 2014
 - A terminator char shouldn't be appended to the output when decoding.
