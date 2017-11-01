@@ -1,7 +1,7 @@
 /*
  * CyoDecode.c - part of the CyoEncode library
  *
- * Copyright (c) 2009-2016, Graham Bull.
+ * Copyright (c) 2009-2017, Graham Bull.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -395,6 +395,26 @@ size_t cyoBase32DecodeA(void* dest, const char* src, size_t srcChars)
             if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80
                 || in5 >= 0x80 || in6 >= 0x80 || in7 >= 0x80 || in8 >= 0x80)
                 return 0; /*ERROR - invalid base32 character*/
+            if (in1 == '=' || in2 == '=')
+                return 0; /*ERROR - invalid padding*/
+            if (dwSrcSize == 0)
+            {
+                if (in3 == '=' && in4 != '=')
+                    return 0; /*ERROR - invalid padding*/
+                if (in4 == '=' && in5 != '=')
+                    return 0; /*ERROR - invalid padding*/
+                if (in5 == '=' && in6 != '=')
+                    return 0; /*ERROR - invalid padding*/
+                if (in6 == '=' && in7 != '=')
+                    return 0; /*ERROR - invalid padding*/
+                if (in7 == '=' && in8 != '=')
+                    return 0; /*ERROR - invalid padding*/
+            }
+            else
+            {
+                if (in3 == '=' || in4 == '=' || in5 == '=' || in6 == '=' || in7 == '=' || in8 == '=')
+                    return 0; /*ERROR - invalid padding*/
+            }
 
             /* Convert ASCII to base32 */
             in1 = BASE32_TABLE[in1];
@@ -479,6 +499,26 @@ size_t cyoBase32DecodeW(void* dest, const wchar_t* src, size_t srcChars)
             if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80
                 || in5 >= 0x80 || in6 >= 0x80 || in7 >= 0x80 || in8 >= 0x80)
                 return 0; /*ERROR - invalid base32 character*/
+            if (in1 == '=' || in2 == '=')
+                return 0; /*ERROR - invalid padding*/
+            if (dwSrcSize == 0)
+            {
+                if (in3 == '=' && in4 != '=')
+                    return 0; /*ERROR - invalid padding*/
+                if (in4 == '=' && in5 != '=')
+                    return 0; /*ERROR - invalid padding*/
+                if (in5 == '=' && in6 != '=')
+                    return 0; /*ERROR - invalid padding*/
+                if (in6 == '=' && in7 != '=')
+                    return 0; /*ERROR - invalid padding*/
+                if (in7 == '=' && in8 != '=')
+                    return 0; /*ERROR - invalid padding*/
+            }
+            else
+            {
+                if (in3 == '=' || in4 == '=' || in5 == '=' || in6 == '=' || in7 == '=' || in8 == '=')
+                    return 0; /*ERROR - invalid padding*/
+            }
 
             /* Convert ASCII to base32 */
             in1 = BASE32_TABLE[in1];
@@ -720,6 +760,18 @@ size_t cyoBase64DecodeA(void* dest, const char* src, size_t srcChars)
             /* Validate ASCII */
             if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80)
                 return 0; /*ERROR - invalid base64 character*/
+            if (in1 == '=' || in2 == '=')
+                return 0; /*ERROR - invalid padding*/
+            if (dwSrcSize == 0)
+            {
+                if (in3 == '=' && in4 != '=')
+                    return 0; /*ERROR - invalid padding*/
+            }
+            else
+            {
+                if (in3 == '=' || in4 == '=')
+                    return 0; /*ERROR - invalid padding*/
+            }
 
             /* Convert ASCII to base64 */
             in1 = BASE64_TABLE[in1];
@@ -779,6 +831,18 @@ size_t cyoBase64DecodeW(void* dest, const wchar_t* src, size_t srcChars)
             /* Validate ASCII */
             if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80)
                 return 0; /*ERROR - invalid base64 character*/
+            if (in1 == '=' || in2 == '=')
+                return 0; /*ERROR - invalid padding*/
+            if (dwSrcSize == 0)
+            {
+                if (in3 == '=' && in4 != '=')
+                    return 0; /*ERROR - invalid padding*/
+            }
+            else
+            {
+                if (in3 == '=' || in4 == '=')
+                    return 0; /*ERROR - invalid padding*/
+            }
 
             /* Convert ASCII to base64 */
             in1 = BASE64_TABLE[in1];
