@@ -107,9 +107,9 @@ static int cyoBaseXXValidateW(const wchar_t* src, size_t srcChars, size_t inputB
 }
 
 static size_t cyoBaseXXDecodeGetLength(size_t srcChars, size_t inputBytes,
-    size_t outputBytes)
+    size_t outputBytes, int checkInputSize)
 {
-    if (srcChars % inputBytes != 0)
+    if (checkInputSize && (srcChars % inputBytes != 0))
         return 0; /*ERROR - extra characters*/
 
     /* OK */
@@ -163,7 +163,7 @@ int cyoBase16ValidateW(const wchar_t* src, size_t srcChars)
 
 size_t cyoBase16DecodeGetLength(size_t srcChars)
 {
-    return cyoBaseXXDecodeGetLength(srcChars, BASE16_INPUT, BASE16_OUTPUT);
+    return cyoBaseXXDecodeGetLength(srcChars, BASE16_INPUT, BASE16_OUTPUT, 1);
 }
 
 size_t cyoBase16DecodeA(void* dest, const char* src, size_t srcChars)
@@ -365,7 +365,7 @@ int cyoBase32ValidateW(const wchar_t* src, size_t srcChars)
 
 size_t cyoBase32DecodeGetLength(size_t srcChars)
 {
-    return cyoBaseXXDecodeGetLength(srcChars, BASE32_INPUT, BASE32_OUTPUT);
+    return cyoBaseXXDecodeGetLength(srcChars, BASE32_INPUT, BASE32_OUTPUT, 1);
 }
 
 size_t cyoBase32DecodeA(void* dest, const char* src, size_t srcChars)
@@ -735,7 +735,7 @@ int cyoBase64ValidateW(const wchar_t* src, size_t srcChars)
 
 size_t cyoBase64DecodeGetLength(size_t srcChars)
 {
-    return cyoBaseXXDecodeGetLength(srcChars, BASE64_INPUT, BASE64_OUTPUT);
+    return cyoBaseXXDecodeGetLength(srcChars, BASE64_INPUT, BASE64_OUTPUT, 1);
 }
 
 size_t cyoBase64DecodeA(void* dest, const char* src, size_t srcChars)
@@ -1080,19 +1080,41 @@ int cyoBase85ValidateW(const wchar_t* src, size_t srcChars)
 
 size_t cyoBase85DecodeGetLength(size_t srcChars)
 {
-    return cyoBaseXXDecodeGetLength(srcChars, BASE85_INPUT, BASE85_OUTPUT);
+    return cyoBaseXXDecodeGetLength(srcChars, BASE85_INPUT, BASE85_OUTPUT, 0);
+}
+
+static const void* cyoBase85NextByte(const void* input, unsigned char* byte, int* padding)
+{
+    unsigned char* curr = (unsigned char*)input;
+    if (*curr)
+    {
+        *byte = (*curr - '!');
+        return (curr + 1);
+    }
+
+    *byte = 84;
+    ++*padding;
+    return input;
+}
+
+static unsigned int cyoBase85Power(unsigned int mult, int count)
+{
+    unsigned int total = 1;
+    for (int i = 0; i < count; ++i)
+        total *= mult;
+    return total;
 }
 
 size_t cyoBase85DecodeA(void* dest, const char* src, size_t srcChars)
 {
-    if (dest && src && (srcChars % BASE85_INPUT == 0))
+    if (dest && src)
     {
         const char* pSrc = src;
         unsigned char* pDest = (unsigned char*)dest;
         size_t dwSrcSize = srcChars;
         size_t dwDestSize = 0;
         unsigned char in1, in2, in3, in4, in5;
-        unsigned int out;
+        int padding;
 
         while (dwSrcSize >= 1)
         {
@@ -1107,48 +1129,63 @@ size_t cyoBase85DecodeA(void* dest, const char* src, size_t srcChars)
 #endif
 
             /* 5 inputs */
-            in1 = (*pSrc++ - 33);
-            in2 = (*pSrc++ - 33);
-            in3 = (*pSrc++ - 33);
-            in4 = (*pSrc++ - 33);
-            in5 = (*pSrc++ - 33);
-            dwSrcSize -= BASE85_INPUT;
+            padding = 0;
+            pSrc = cyoBase85NextByte(pSrc, &in1, &padding);
+            if (padding != 0)
+                return 0; /*ERROR - insufficient data*/
+            pSrc = cyoBase85NextByte(pSrc, &in2, &padding);
+            if (padding != 0)
+                return 0; /*ERROR - insufficient data*/
+            pSrc = cyoBase85NextByte(pSrc, &in3, &padding);
+            pSrc = cyoBase85NextByte(pSrc, &in4, &padding);
+            pSrc = cyoBase85NextByte(pSrc, &in5, &padding);
+            dwSrcSize -= (BASE85_INPUT - padding);
 
             /* Validate */
             if (in1 >= 85 || in2 >= 85 || in3 >= 85 || in4 >= 85 || in5 >= 85)
                 return 0; /*ERROR - invalid base85 character*/
 
             /* Output */
-            out = in1;
-            out *= 85;
-            out |= in2;
-            out *= 85;
-            out |= in3;
-            out *= 85;
-            out |= in4;
-            out *= 85;
-            out |= in5;
-            *(unsigned int*)pDest = out;
-            pDest += BASE85_OUTPUT;
-            dwDestSize += BASE85_OUTPUT;
+            unsigned int n = (in1 * cyoBase85Power(85, 4))
+                + (in2 * cyoBase85Power(85, 3))
+                + (in3 * cyoBase85Power(85, 2))
+                + (in4 * cyoBase85Power(85, 1))
+                + in5;
+            *pDest++ = (unsigned char)(n >> 24);
+            ++dwDestSize;
+            if (padding <= 2)
+            {
+                *pDest++ = (unsigned char)(n >> 16);
+                ++dwDestSize;
+                if (padding <= 1)
+                {
+                    *pDest++ = (unsigned char)(n >> 8);
+                    ++dwDestSize;
+                    if (padding == 0)
+                    {
+                        *pDest++ = (unsigned char)n;
+                        ++dwDestSize;
+                    }
+                }
+            }
         }
 
         return dwDestSize;
     }
     else
-        return 0; /*ERROR - null pointer, or srcChars isn't a multiple of 5*/
+        return 0; /*ERROR - null pointer*/
 }
 
 size_t cyoBase85DecodeW(void* dest, const wchar_t* src, size_t srcChars)
 {
-    if (dest && src && (srcChars % BASE85_INPUT == 0))
+    if (dest && src)
     {
         const wchar_t* pSrc = src;
         unsigned char* pDest = (unsigned char*)dest;
         size_t dwSrcSize = srcChars;
         size_t dwDestSize = 0;
-        wchar_t in1, in2, in3, in4, in5;
-        unsigned int out;
+        unsigned char in1, in2, in3, in4, in5;
+        int padding;
 
         while (dwSrcSize >= 1)
         {
@@ -1163,36 +1200,51 @@ size_t cyoBase85DecodeW(void* dest, const wchar_t* src, size_t srcChars)
 #endif
 
             /* 5 inputs */
-            in1 = (*pSrc++ - 33);
-            in2 = (*pSrc++ - 33);
-            in3 = (*pSrc++ - 33);
-            in4 = (*pSrc++ - 33);
-            in5 = (*pSrc++ - 33);
-            dwSrcSize -= BASE85_INPUT;
+            padding = 0;
+            pSrc = cyoBase85NextByte(pSrc, &in1, &padding);
+            if (padding != 0)
+                return 0; /*ERROR - insufficient data*/
+            pSrc = cyoBase85NextByte(pSrc, &in2, &padding);
+            if (padding != 0)
+                return 0; /*ERROR - insufficient data*/
+            pSrc = cyoBase85NextByte(pSrc, &in3, &padding);
+            pSrc = cyoBase85NextByte(pSrc, &in4, &padding);
+            pSrc = cyoBase85NextByte(pSrc, &in5, &padding);
+            dwSrcSize -= (BASE85_INPUT - padding);
 
             /* Validate */
             if (in1 >= 85 || in2 >= 85 || in3 >= 85 || in4 >= 85 || in5 >= 85)
                 return 0; /*ERROR - invalid base85 character*/
 
             /* Output */
-            out = in1;
-            out *= 85;
-            out |= in2;
-            out *= 85;
-            out |= in3;
-            out *= 85;
-            out |= in4;
-            out *= 85;
-            out |= in5;
-            *(unsigned int*)pDest = out;
-            pDest += BASE85_OUTPUT;
-            dwDestSize += BASE85_OUTPUT;
+            unsigned int n = (in1 * cyoBase85Power(85, 4))
+                + (in2 * cyoBase85Power(85, 3))
+                + (in3 * cyoBase85Power(85, 2))
+                + (in4 * cyoBase85Power(85, 1))
+                + in5;
+            *pDest++ = (unsigned char)(n >> 24);
+            ++dwDestSize;
+            if (padding <= 2)
+            {
+                *pDest++ = (unsigned char)(n >> 16);
+                ++dwDestSize;
+                if (padding <= 1)
+                {
+                    *pDest++ = (unsigned char)(n >> 8);
+                    ++dwDestSize;
+                    if (padding == 0)
+                    {
+                        *pDest++ = (unsigned char)n;
+                        ++dwDestSize;
+                    }
+                }
+            }
         }
 
         return dwDestSize;
     }
     else
-        return 0; /*ERROR - null pointer, or srcChars isn't a multiple of 5*/
+        return 0; /*ERROR - null pointer*/
 }
 
 size_t cyoBase85DecodeBlockA(void* dest, const char* src)
