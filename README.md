@@ -29,7 +29,7 @@ CyoEncode requires a C++98 compiler, and is known to build on the following plat
 
 All the files in this library are covered under the terms of the Berkeley Software Distribution (BSD) License:
 
-Copyright (c) 2009-2017, Graham Bull.
+Copyright (c) 2009-2021, Graham Bull.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
