@@ -118,7 +118,7 @@
 
 /*****************************************************************************/
 
-int run_c_tests(void)
+extern "C" int run_c_tests(void)
 {
     const char* const original = "A wise man speaks when he has something to say";
     size_t required = 0;

@@ -1130,15 +1130,15 @@ size_t cyoBase85DecodeA(void* dest, const char* src, size_t srcChars)
 
             /* 5 inputs */
             padding = 0;
-            pSrc = cyoBase85NextByte(pSrc, &in1, &padding);
+            pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in1, &padding);
             if (padding != 0)
                 return 0; /*ERROR - insufficient data*/
-            pSrc = cyoBase85NextByte(pSrc, &in2, &padding);
+            pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in2, &padding);
             if (padding != 0)
                 return 0; /*ERROR - insufficient data*/
-            pSrc = cyoBase85NextByte(pSrc, &in3, &padding);
-            pSrc = cyoBase85NextByte(pSrc, &in4, &padding);
-            pSrc = cyoBase85NextByte(pSrc, &in5, &padding);
+            pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in3, &padding);
+            pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in4, &padding);
+            pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in5, &padding);
             dwSrcSize -= (BASE85_INPUT - padding);
 
             /* Validate */
@@ -1201,15 +1201,15 @@ size_t cyoBase85DecodeW(void* dest, const wchar_t* src, size_t srcChars)
 
             /* 5 inputs */
             padding = 0;
-            pSrc = cyoBase85NextByte(pSrc, &in1, &padding);
+            pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in1, &padding);
             if (padding != 0)
                 return 0; /*ERROR - insufficient data*/
-            pSrc = cyoBase85NextByte(pSrc, &in2, &padding);
+            pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in2, &padding);
             if (padding != 0)
                 return 0; /*ERROR - insufficient data*/
-            pSrc = cyoBase85NextByte(pSrc, &in3, &padding);
-            pSrc = cyoBase85NextByte(pSrc, &in4, &padding);
-            pSrc = cyoBase85NextByte(pSrc, &in5, &padding);
+            pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in3, &padding);
+            pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in4, &padding);
+            pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in5, &padding);
             dwSrcSize -= (BASE85_INPUT - padding);
 
             /* Validate */

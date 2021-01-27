@@ -30,6 +30,7 @@
 #include "CyoDecode.hpp"
 #include "testdata.h"
 
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -39,9 +40,9 @@
 #define TEST_BASExx(base,str,expected) \
     if (!failedTests) { \
         std::cout << "TEST_BASE" << #base << "('" << str << "')='" << expected << "'"; \
-        required = CyoEncode::Base##base::GetLength(strlen(str)); \
+        required = CyoEncode::Base##base::GetLength(std::strlen(str)); \
         encoded.resize(required); \
-        CyoEncode::Base##base::Encode(&encoded.front(), (const byte_t*)str, strlen(str)); \
+        CyoEncode::Base##base::Encode(&encoded.front(), (const byte_t*)str, std::strlen(str)); \
         encodedStr = std::string(&encoded.front()); \
         if (encodedStr == expected) { \
             valid = CyoDecode::Base##base::Validate(encodedStr.c_str(), encodedStr.size()); \
@@ -99,7 +100,7 @@
 #define CHECK_INVALID_BASExx(base,str,res) \
     if (!failedTests) { \
         std::cout << "CHECK_INVALID_BASE" << #base << "('" << str << "')=" << res; \
-        valid = cyoBase##base##Validate(str, strlen(str)); \
+        valid = cyoBase##base##Validate(str, std::strlen(str)); \
         if (valid != 0) { \
             if (valid == res) \
                 std::cout << " [passed]" << std::endl; \
