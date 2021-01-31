@@ -1,7 +1,7 @@
 /*
  * CyoEncode.c - part of the CyoEncode library
  *
- * Copyright (c) 2009-2017, Graham Bull.
+ * Copyright (c) 2009-2021, Graham Bull.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -724,7 +724,15 @@ size_t cyoBase85EncodeA(char* dest, const void* src, size_t srcBytes)
             if (n == 0)
             {
                 *pDest++ = 'z';
-                dwDestSize += 1;
+                ++dwDestSize;
+                continue;
+            }
+#endif
+#if FOLD_SPACES
+            if (n == 0x20202020)
+            {
+                *pDest++ = 'y';
+                ++dwDestSize;
                 continue;
             }
 #endif
@@ -814,7 +822,15 @@ size_t cyoBase85EncodeW(wchar_t* dest, const void* src, size_t srcBytes)
             if (n == 0)
             {
                 *pDest++ = 'z';
-                dwDestSize += 1;
+                ++dwDestSize;
+                continue;
+            }
+#endif
+#if FOLD_SPACES
+            if (n == 0x20202020)
+            {
+                *pDest++ = 'y';
+                ++dwDestSize;
                 continue;
             }
 #endif
@@ -882,7 +898,7 @@ size_t cyoBase85EncodeBlockA(char* dest, const void* src)
         size_t i;
 
         /* Encode inputs */
-        for (i = 0; i < BASE85_INPUT; ++i)
+        for (i = 0; *pSrc && i < BASE85_INPUT; ++i)
         {
             n <<= 8;
             n |= *pSrc++;
@@ -891,6 +907,13 @@ size_t cyoBase85EncodeBlockA(char* dest, const void* src)
         if (n == 0)
         {
             *pDest++ = 'z';
+            return 1;
+        }
+#endif
+#if FOLD_SPACES
+        if (n == 0x20202020)
+        {
+            *pDest++ = 'y';
             return 1;
         }
 #endif
@@ -935,7 +958,7 @@ size_t cyoBase85EncodeBlockW(wchar_t* dest, const void* src)
         size_t i;
 
         /* Encode inputs */
-        for (i = 0; i < BASE85_INPUT; ++i)
+        for (i = 0; *pSrc && i < BASE85_INPUT; ++i)
         {
             n <<= 8;
             n |= *pSrc++;
@@ -944,6 +967,13 @@ size_t cyoBase85EncodeBlockW(wchar_t* dest, const void* src)
         if (n == 0)
         {
             *pDest++ = 'z';
+            return 1;
+        }
+#endif
+#if FOLD_SPACES
+        if (n == 0x20202020)
+        {
+            *pDest++ = 'y';
             return 1;
         }
 #endif

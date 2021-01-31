@@ -1,7 +1,7 @@
 /*
  * CyoDecode.c - part of the CyoEncode library
  *
- * Copyright (c) 2009-2017, Graham Bull.
+ * Copyright (c) 2009-2021, Graham Bull.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -987,6 +987,15 @@ int cyoBase85ValidateA(const char* src, size_t srcChars)
 #if FOLD_ZERO
         if (*pSrc == 'z')
         {
+            ++pSrc;
+            --dwSrcSize;
+            continue;
+        }
+#endif
+#if FOLD_SPACES
+        if (*pSrc == 'y')
+        {
+            ++pSrc;
             --dwSrcSize;
             continue;
         }
@@ -1038,6 +1047,15 @@ int cyoBase85ValidateW(const wchar_t* src, size_t srcChars)
 #if FOLD_ZERO
         if (*pSrc == L'z')
         {
+            ++pSrc;
+            --dwSrcSize;
+            continue;
+        }
+#endif
+#if FOLD_SPACES
+        if (*pSrc == L'y')
+        {
+            ++pSrc;
             --dwSrcSize;
             continue;
         }
@@ -1123,6 +1141,21 @@ size_t cyoBase85DecodeA(void* dest, const char* src, size_t srcChars)
             {
                 ++pSrc;
                 *pDest++ = 0;
+                *pDest++ = 0;
+                *pDest++ = 0;
+                *pDest++ = 0;
+                dwDestSize += BASE85_OUTPUT;
+                continue;
+            }
+#endif
+#if FOLD_SPACES
+            if (*pSrc == 'y')
+            {
+                ++pSrc;
+                *pDest++ = 0x20;
+                *pDest++ = 0x20;
+                *pDest++ = 0x20;
+                *pDest++ = 0x20;
                 dwDestSize += BASE85_OUTPUT;
                 continue;
             }
@@ -1194,6 +1227,21 @@ size_t cyoBase85DecodeW(void* dest, const wchar_t* src, size_t srcChars)
             {
                 ++pSrc;
                 *pDest++ = 0;
+                *pDest++ = 0;
+                *pDest++ = 0;
+                *pDest++ = 0;
+                dwDestSize += BASE85_OUTPUT;
+                continue;
+            }
+#endif
+#if FOLD_SPACES
+            if (*pSrc == L'y')
+            {
+                ++pSrc;
+                *pDest++ = 0x20;
+                *pDest++ = 0x20;
+                *pDest++ = 0x20;
+                *pDest++ = 0x20;
                 dwDestSize += BASE85_OUTPUT;
                 continue;
             }
@@ -1259,7 +1307,20 @@ size_t cyoBase85DecodeBlockA(void* dest, const char* src)
 #if FOLD_ZERO
         if (*pSrc == 'z')
         {
-            *pDest = 0;
+            *pDest++ = 0;
+            *pDest++ = 0;
+            *pDest++ = 0;
+            *pDest++ = 0;
+            return BASE85_OUTPUT;
+        }
+#endif
+#if FOLD_SPACES
+        if (*pSrc == 'y')
+        {
+            *pDest++ = 0x20;
+            *pDest++ = 0x20;
+            *pDest++ = 0x20;
+            *pDest++ = 0x20;
             return BASE85_OUTPUT;
         }
 #endif
@@ -1304,7 +1365,20 @@ size_t cyoBase85DecodeBlockW(void* dest, const wchar_t* src)
 #if FOLD_ZERO
         if (*pSrc == L'z')
         {
-            *pDest = 0;
+            *pDest++ = 0;
+            *pDest++ = 0;
+            *pDest++ = 0;
+            *pDest++ = 0;
+            return BASE85_OUTPUT;
+        }
+#endif
+#if FOLD_SPACES
+        if (*pSrc == L'y')
+        {
+            *pDest++ = 0x20;
+            *pDest++ = 0x20;
+            *pDest++ = 0x20;
+            *pDest++ = 0x20;
             return BASE85_OUTPUT;
         }
 #endif

@@ -1,7 +1,7 @@
 /*
  * test1.c - part of the CyoEncode library
  * 
- * Copyright (c) 2009-2017, Graham Bull.
+ * Copyright (c) 2009-2021, Graham Bull.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -118,7 +118,13 @@
 
 /*****************************************************************************/
 
-extern "C" int run_c_tests(void)
+#if __cplusplus
+#define EXTERN_C extern "C"
+#else
+#define EXTERN_C
+#endif
+
+EXTERN_C int run_c_tests(void)
 {
     const char* const original = "A wise man speaks when he has something to say";
     size_t required = 0;
