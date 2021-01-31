@@ -5,8 +5,8 @@ https://github.com/calzakk/CyoEncode
 Copyright (c) 2009-2021, Graham Bull. All rights reserved.
 ===============================================================================
 
-Version 1.2.1
-Release Date 27th January 2021
+Version 1.2.2
+Release Date 31st January 2021
 
 -------------------------------------------------------------------------------
 1. License
@@ -36,6 +36,9 @@ For QT developers, a project include file (CyoEncode.pri) is included.
 -------------------------------------------------------------------------------
 3. Release Notes
 -------------------------------------------------------------------------------
+
+1.2.2 - 31st January 2021
+- Base85 encoding/decoding now supports folding of spaces to a single 'y'.
 
 1.2.1 - 27th January 2021
 - Fixed Base85 decoding.
