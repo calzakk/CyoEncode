@@ -119,7 +119,7 @@ static size_t cyoBaseXXDecodeGetLength(size_t srcChars, size_t inputBytes,
 /****************************** Base16 Decoding ******************************/
 
 /*
- * output 1 byte for every 2 input:
+ * output 1 byte for every 2 input chars:
  *
  *               outputs: 1
  * inputs: 1 = ----1111 = 1111----
@@ -151,14 +151,12 @@ static const unsigned char BASE16_TABLE[ 0x80 ] = {
 
 int cyoBase16ValidateA(const char* src, size_t srcChars)
 {
-    return cyoBaseXXValidateA(src, srcChars, BASE16_INPUT,
-        BASE16_MAX_PADDING, BASE16_MAX_VALUE, BASE16_TABLE);
+    return cyoBaseXXValidateA(src, srcChars, BASE16_INPUT, BASE16_MAX_PADDING, BASE16_MAX_VALUE, BASE16_TABLE);
 }
 
 int cyoBase16ValidateW(const wchar_t* src, size_t srcChars)
 {
-    return cyoBaseXXValidateW(src, srcChars, BASE16_INPUT,
-        BASE16_MAX_PADDING, BASE16_MAX_VALUE, BASE16_TABLE);
+    return cyoBaseXXValidateW(src, srcChars, BASE16_INPUT, BASE16_MAX_PADDING, BASE16_MAX_VALUE, BASE16_TABLE);
 }
 
 size_t cyoBase16DecodeGetLength(size_t srcChars)
@@ -168,128 +166,27 @@ size_t cyoBase16DecodeGetLength(size_t srcChars)
 
 size_t cyoBase16DecodeA(void* dest, const char* src, size_t srcChars)
 {
-    if (dest && src && (srcChars % BASE16_INPUT == 0))
-    {
-        const char* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        size_t dwSrcSize = srcChars;
-        size_t dwDestSize = 0;
-        unsigned char in1, in2;
+    const char* pSrc;
+    unsigned char* pDest;
+    size_t dwSrcSize;
+    size_t dwDestSize;
 
-        while (dwSrcSize >= 1)
-        {
-            /* 2 inputs */
-            in1 = *pSrc++;
-            in2 = *pSrc++;
-            dwSrcSize -= BASE16_INPUT;
-
-            /* Validate ASCII */
-            if (in1 >= 0x80 || in2 >= 0x80)
-                return 0; /*ERROR - invalid base16 character*/
-
-            /* Convert ASCII to base16 */
-            in1 = BASE16_TABLE[in1];
-            in2 = BASE16_TABLE[in2];
-
-            /* Validate base16 */
-            if (in1 > BASE16_MAX_VALUE || in2 > BASE16_MAX_VALUE)
-                return 0; /*ERROR - invalid base16 character*/
-
-            /* 1 output */
-            *pDest++ = ((in1 << 4) | in2);
-            dwDestSize += BASE16_OUTPUT;
-        }
-
-        return dwDestSize;
-    }
-    else
+    if (!dest || !src || (srcChars % BASE16_INPUT != 0))
         return 0; /*ERROR - null pointer, or srcChars isn't a multiple of 2*/
-}
 
-size_t cyoBase16DecodeW(void* dest, const wchar_t* src, size_t srcChars)
-{
-    if (dest && src && (srcChars % BASE16_INPUT == 0))
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+    dwSrcSize = srcChars;
+    dwDestSize = 0;
+
+    while (dwSrcSize >= 1)
     {
-        const wchar_t* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        size_t dwSrcSize = srcChars;
-        size_t dwDestSize = 0;
-        wchar_t in1, in2;
-
-        while (dwSrcSize >= 1)
-        {
-            /* 2 inputs */
-            in1 = *pSrc++;
-            in2 = *pSrc++;
-            dwSrcSize -= BASE16_INPUT;
-
-            /* Validate ASCII */
-            if (in1 >= 0x80 || in2 >= 0x80)
-                return 0; /*ERROR - invalid base16 character*/
-
-            /* Convert ASCII to base16 */
-            in1 = BASE16_TABLE[in1];
-            in2 = BASE16_TABLE[in2];
-
-            /* Validate base16 */
-            if (in1 > BASE16_MAX_VALUE || in2 > BASE16_MAX_VALUE)
-                return 0; /*ERROR - invalid base16 character*/
-
-            /* 1 output */
-            *pDest++ = (unsigned char)((in1 << 4) | in2);
-            dwDestSize += BASE16_OUTPUT;
-        }
-
-        return dwDestSize;
-    }
-    else
-        return 0; /*ERROR - null pointer, or srcChars isn't a multiple of 2*/
-}
-
-size_t cyoBase16DecodeBlockA(void* dest, const char* src)
-{
-    if (dest && src)
-    {
-        const char* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
         unsigned char in1, in2;
 
         /* 2 inputs */
         in1 = *pSrc++;
         in2 = *pSrc++;
-
-        /* Validate ASCII */
-        if (in1 >= 0x80 || in2 >= 0x80)
-            return 0; /*ERROR - invalid base16 character*/
-
-        /* Convert ASCII to base16 */
-        in1 = BASE16_TABLE[in1];
-        in2 = BASE16_TABLE[in2];
-
-        /* Validate base16 */
-        if (in1 > BASE16_MAX_VALUE || in2 > BASE16_MAX_VALUE)
-            return 0; /*ERROR - invalid base16 character*/
-
-        /* 1 output */
-        *pDest++ = ((in1 << 4) | in2);
-
-        return BASE16_OUTPUT;
-    }
-    else
-        return 0; /*ERROR - null pointer*/
-}
-
-size_t cyoBase16DecodeBlockW(void* dest, const wchar_t* src)
-{
-    if (dest && src)
-    {
-        const wchar_t* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        wchar_t in1, in2;
-
-        /* 2 inputs */
-        in1 = *pSrc++;
-        in2 = *pSrc++;
+        dwSrcSize -= BASE16_INPUT;
 
         /* Validate ASCII */
         if (in1 >= 0x80 || in2 >= 0x80)
@@ -305,17 +202,126 @@ size_t cyoBase16DecodeBlockW(void* dest, const wchar_t* src)
 
         /* 1 output */
         *pDest++ = (unsigned char)((in1 << 4) | in2);
-
-        return BASE16_OUTPUT;
+        dwDestSize += BASE16_OUTPUT;
     }
-    else
+
+    return dwDestSize;
+}
+
+size_t cyoBase16DecodeW(void* dest, const wchar_t* src, size_t srcChars)
+{
+    const wchar_t* pSrc;
+    unsigned char* pDest;
+    size_t dwSrcSize;
+    size_t dwDestSize;
+
+    if (!dest || !src || (srcChars % BASE16_INPUT != 0))
+        return 0; /*ERROR - null pointer, or srcChars isn't a multiple of 2*/
+
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+    dwSrcSize = srcChars;
+    dwDestSize = 0;
+
+    while (dwSrcSize >= 1)
+    {
+        wchar_t in1, in2;
+
+        /* 2 inputs */
+        in1 = *pSrc++;
+        in2 = *pSrc++;
+        dwSrcSize -= BASE16_INPUT;
+
+        /* Validate ASCII */
+        if (in1 >= 0x80 || in2 >= 0x80)
+            return 0; /*ERROR - invalid base16 character*/
+
+        /* Convert ASCII to base16 */
+        in1 = BASE16_TABLE[in1];
+        in2 = BASE16_TABLE[in2];
+
+        /* Validate base16 */
+        if (in1 > BASE16_MAX_VALUE || in2 > BASE16_MAX_VALUE)
+            return 0; /*ERROR - invalid base16 character*/
+
+        /* 1 output */
+        *pDest++ = (unsigned char)((in1 << 4) | in2);
+        dwDestSize += BASE16_OUTPUT;
+    }
+
+    return dwDestSize;
+}
+
+size_t cyoBase16DecodeBlockA(void* dest, const char* src)
+{
+    const char* pSrc;
+    unsigned char* pDest;
+    unsigned char in1, in2;
+
+    if (!dest || !src)
         return 0; /*ERROR - null pointer*/
+
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+
+    /* 2 inputs */
+    in1 = *pSrc++;
+    in2 = *pSrc++;
+
+    /* Validate ASCII */
+    if (in1 >= 0x80 || in2 >= 0x80)
+        return 0; /*ERROR - invalid base16 character*/
+
+    /* Convert ASCII to base16 */
+    in1 = BASE16_TABLE[in1];
+    in2 = BASE16_TABLE[in2];
+
+    /* Validate base16 */
+    if (in1 > BASE16_MAX_VALUE || in2 > BASE16_MAX_VALUE)
+        return 0; /*ERROR - invalid base16 character*/
+
+    /* 1 output */
+    *pDest++ = ((in1 << 4) | in2);
+    return BASE16_OUTPUT;
+}
+
+size_t cyoBase16DecodeBlockW(void* dest, const wchar_t* src)
+{
+    const wchar_t* pSrc;
+    unsigned char* pDest;
+    wchar_t in1, in2;
+
+    if (!dest || !src)
+        return 0; /*ERROR - null pointer*/
+
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+
+    /* 2 inputs */
+    in1 = *pSrc++;
+    in2 = *pSrc++;
+
+    /* Validate ASCII */
+    if (in1 >= 0x80 || in2 >= 0x80)
+        return 0; /*ERROR - invalid base16 character*/
+
+    /* Convert ASCII to base16 */
+    in1 = BASE16_TABLE[in1];
+    in2 = BASE16_TABLE[in2];
+
+    /* Validate base16 */
+    if (in1 > BASE16_MAX_VALUE || in2 > BASE16_MAX_VALUE)
+        return 0; /*ERROR - invalid base16 character*/
+
+    /* 1 output */
+    *pDest++ = (unsigned char)((in1 << 4) | in2);
+    return BASE16_OUTPUT;
 }
 
 /****************************** Base32 Decoding ******************************/
 
 /*
- * output 5 bytes for every 8 input:
+ * output 5 bytes for every 8 input chars:
  *
  *               outputs: 1        2        3        4        5
  * inputs: 1 = ---11111 = 11111---
@@ -353,14 +359,12 @@ static const unsigned char BASE32_TABLE[ 0x80 ] = {
 
 int cyoBase32ValidateA(const char* src, size_t srcChars)
 {
-    return cyoBaseXXValidateA(src, srcChars, BASE32_INPUT,
-        BASE32_MAX_PADDING, BASE32_MAX_VALUE, BASE32_TABLE);
+    return cyoBaseXXValidateA(src, srcChars, BASE32_INPUT, BASE32_MAX_PADDING, BASE32_MAX_VALUE, BASE32_TABLE);
 }
 
 int cyoBase32ValidateW(const wchar_t* src, size_t srcChars)
 {
-    return cyoBaseXXValidateW(src, srcChars, BASE32_INPUT,
-        BASE32_MAX_PADDING, BASE32_MAX_VALUE, BASE32_TABLE);
+    return cyoBaseXXValidateW(src, srcChars, BASE32_INPUT, BASE32_MAX_PADDING, BASE32_MAX_VALUE, BASE32_TABLE);
 }
 
 size_t cyoBase32DecodeGetLength(size_t srcChars)
@@ -370,326 +374,326 @@ size_t cyoBase32DecodeGetLength(size_t srcChars)
 
 size_t cyoBase32DecodeA(void* dest, const char* src, size_t srcChars)
 {
-    if (dest && src && (srcChars % BASE32_INPUT == 0))
+    const char* pSrc;
+    unsigned char* pDest;
+    size_t dwSrcSize;
+    size_t dwDestSize;
+
+    if (!dest || !src || (srcChars % BASE32_INPUT != 0))
+        return 0; /*ERROR - null pointer, or srcChars isn't a multiple of 8*/
+
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+    dwSrcSize = srcChars;
+    dwDestSize = 0;
+
+    while (dwSrcSize >= 1)
     {
-        const char* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        size_t dwSrcSize = srcChars;
-        size_t dwDestSize = 0;
         unsigned char in1, in2, in3, in4, in5, in6, in7, in8;
 
-        while (dwSrcSize >= 1)
+        /* 8 inputs */
+        in1 = *pSrc++;
+        in2 = *pSrc++;
+        in3 = *pSrc++;
+        in4 = *pSrc++;
+        in5 = *pSrc++;
+        in6 = *pSrc++;
+        in7 = *pSrc++;
+        in8 = *pSrc++;
+        dwSrcSize -= BASE32_INPUT;
+
+        /* Validate ASCII */
+        if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80
+            || in5 >= 0x80 || in6 >= 0x80 || in7 >= 0x80 || in8 >= 0x80)
+            return 0; /*ERROR - invalid base32 character*/
+        if (in1 == '=' || in2 == '=')
+            return 0; /*ERROR - invalid padding*/
+        if (dwSrcSize == 0)
         {
-            /* 8 inputs */
-            in1 = *pSrc++;
-            in2 = *pSrc++;
-            in3 = *pSrc++;
-            in4 = *pSrc++;
-            in5 = *pSrc++;
-            in6 = *pSrc++;
-            in7 = *pSrc++;
-            in8 = *pSrc++;
-            dwSrcSize -= BASE32_INPUT;
-
-            /* Validate ASCII */
-            if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80
-                || in5 >= 0x80 || in6 >= 0x80 || in7 >= 0x80 || in8 >= 0x80)
-                return 0; /*ERROR - invalid base32 character*/
-            if (in1 == '=' || in2 == '=')
+            if (in3 == '=' && in4 != '=')
                 return 0; /*ERROR - invalid padding*/
-            if (dwSrcSize == 0)
-            {
-                if (in3 == '=' && in4 != '=')
-                    return 0; /*ERROR - invalid padding*/
-                if (in4 == '=' && in5 != '=')
-                    return 0; /*ERROR - invalid padding*/
-                if (in5 == '=' && in6 != '=')
-                    return 0; /*ERROR - invalid padding*/
-                if (in6 == '=' && in7 != '=')
-                    return 0; /*ERROR - invalid padding*/
-                if (in7 == '=' && in8 != '=')
-                    return 0; /*ERROR - invalid padding*/
-            }
-            else
-            {
-                if (in3 == '=' || in4 == '=' || in5 == '=' || in6 == '=' || in7 == '=' || in8 == '=')
-                    return 0; /*ERROR - invalid padding*/
-            }
-
-            /* Convert ASCII to base32 */
-            in1 = BASE32_TABLE[in1];
-            in2 = BASE32_TABLE[in2];
-            in3 = BASE32_TABLE[in3];
-            in4 = BASE32_TABLE[in4];
-            in5 = BASE32_TABLE[in5];
-            in6 = BASE32_TABLE[in6];
-            in7 = BASE32_TABLE[in7];
-            in8 = BASE32_TABLE[in8];
-
-            /* Validate base32 */
-            if (in1 > BASE32_MAX_VALUE || in2 > BASE32_MAX_VALUE)
-                return 0; /*ERROR - invalid base32 character*/
-            /*the following can be padding*/
-            if (in3 > BASE32_MAX_VALUE + 1 || in4 > BASE32_MAX_VALUE + 1
-                || in5 > BASE32_MAX_VALUE + 1 || in6 > BASE32_MAX_VALUE + 1
-                || in7 > BASE32_MAX_VALUE + 1 || in8 > BASE32_MAX_VALUE + 1)
-                return 0; /*ERROR - invalid base32 character*/
-
-            /* 5 outputs */
-            *pDest++ = ((in1 & 0x1f) << 3) | ((in2 & 0x1c) >> 2);
-            *pDest++ = ((in2 & 0x03) << 6) | ((in3 & 0x1f) << 1) | ((in4 & 0x10) >> 4);
-            *pDest++ = ((in4 & 0x0f) << 4) | ((in5 & 0x1e) >> 1);
-            *pDest++ = ((in5 & 0x01) << 7) | ((in6 & 0x1f) << 2) | ((in7 & 0x18) >> 3);
-            *pDest++ = ((in7 & 0x07) << 5) | (in8 & 0x1f);
-            dwDestSize += BASE32_OUTPUT;
-
-            /* Padding */
-            if (in8 == BASE32_MAX_VALUE + 1)
-            {
-                --dwDestSize;
-                assert((in7 == BASE32_MAX_VALUE + 1 && in6 == BASE32_MAX_VALUE + 1)
-                    || (in7 != BASE32_MAX_VALUE + 1));
-                if (in6 == BASE32_MAX_VALUE + 1)
-                {
-                    --dwDestSize;
-                    if (in5 == BASE32_MAX_VALUE + 1)
-                    {
-                        --dwDestSize;
-                        assert((in4 == BASE32_MAX_VALUE + 1 && in3 == BASE32_MAX_VALUE + 1)
-                            || (in4 != BASE32_MAX_VALUE + 1));
-                        if (in3 == BASE32_MAX_VALUE + 1)
-                        {
-                            --dwDestSize;
-                        }
-                    }
-                }
-            }
+            if (in4 == '=' && in5 != '=')
+                return 0; /*ERROR - invalid padding*/
+            if (in5 == '=' && in6 != '=')
+                return 0; /*ERROR - invalid padding*/
+            if (in6 == '=' && in7 != '=')
+                return 0; /*ERROR - invalid padding*/
+            if (in7 == '=' && in8 != '=')
+                return 0; /*ERROR - invalid padding*/
+        }
+        else
+        {
+            if (in3 == '=' || in4 == '=' || in5 == '=' || in6 == '=' || in7 == '=' || in8 == '=')
+                return 0; /*ERROR - invalid padding*/
         }
 
-        return dwDestSize;
+        /* Convert ASCII to base32 */
+        in1 = BASE32_TABLE[in1];
+        in2 = BASE32_TABLE[in2];
+        in3 = BASE32_TABLE[in3];
+        in4 = BASE32_TABLE[in4];
+        in5 = BASE32_TABLE[in5];
+        in6 = BASE32_TABLE[in6];
+        in7 = BASE32_TABLE[in7];
+        in8 = BASE32_TABLE[in8];
+
+        /* Validate base32 */
+        if (in1 > BASE32_MAX_VALUE || in2 > BASE32_MAX_VALUE)
+            return 0; /*ERROR - invalid base32 character*/
+        /*the following can be padding*/
+        if (in3 > BASE32_MAX_VALUE + 1 || in4 > BASE32_MAX_VALUE + 1
+            || in5 > BASE32_MAX_VALUE + 1 || in6 > BASE32_MAX_VALUE + 1
+            || in7 > BASE32_MAX_VALUE + 1 || in8 > BASE32_MAX_VALUE + 1)
+            return 0; /*ERROR - invalid base32 character*/
+
+        /* 5 outputs */
+        *pDest++ = ((in1 & 0x1f) << 3) | ((in2 & 0x1c) >> 2);
+        *pDest++ = ((in2 & 0x03) << 6) | ((in3 & 0x1f) << 1) | ((in4 & 0x10) >> 4);
+        *pDest++ = ((in4 & 0x0f) << 4) | ((in5 & 0x1e) >> 1);
+        *pDest++ = ((in5 & 0x01) << 7) | ((in6 & 0x1f) << 2) | ((in7 & 0x18) >> 3);
+        *pDest++ = ((in7 & 0x07) << 5) | (in8 & 0x1f);
+        dwDestSize += BASE32_OUTPUT;
+
+        /* Padding */
+        if (in8 != BASE32_MAX_VALUE + 1)
+            continue;
+        --dwDestSize;
+        assert((in7 == BASE32_MAX_VALUE + 1 && in6 == BASE32_MAX_VALUE + 1)
+            || (in7 != BASE32_MAX_VALUE + 1));
+        if (in6 != BASE32_MAX_VALUE + 1)
+            continue;
+        --dwDestSize;
+        if (in5 != BASE32_MAX_VALUE + 1)
+            continue;
+        --dwDestSize;
+        assert((in4 == BASE32_MAX_VALUE + 1 && in3 == BASE32_MAX_VALUE + 1)
+            || (in4 != BASE32_MAX_VALUE + 1));
+        if (in3 != BASE32_MAX_VALUE + 1)
+            continue;
+        --dwDestSize;
     }
-    else
-        return 0; /*ERROR - null pointer, or srcChars isn't a multiple of 8*/
+
+    return dwDestSize;
 }
 
 size_t cyoBase32DecodeW(void* dest, const wchar_t* src, size_t srcChars)
 {
-    if (dest && src && (srcChars % BASE32_INPUT == 0))
+    const wchar_t* pSrc;
+    unsigned char* pDest;
+    size_t dwSrcSize;
+    size_t dwDestSize;
+
+    if (!dest || !src || (srcChars % BASE32_INPUT != 0))
+        return 0; /*ERROR - null pointer, or srcChars isn't a multiple of 8*/
+
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+    dwSrcSize = srcChars;
+    dwDestSize = 0;
+
+    while (dwSrcSize >= 1)
     {
-        const wchar_t* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        size_t dwSrcSize = srcChars;
-        size_t dwDestSize = 0;
         wchar_t in1, in2, in3, in4, in5, in6, in7, in8;
 
-        while (dwSrcSize >= 1)
+        /* 8 inputs */
+        in1 = *pSrc++;
+        in2 = *pSrc++;
+        in3 = *pSrc++;
+        in4 = *pSrc++;
+        in5 = *pSrc++;
+        in6 = *pSrc++;
+        in7 = *pSrc++;
+        in8 = *pSrc++;
+        dwSrcSize -= BASE32_INPUT;
+
+        /* Validate ASCII */
+        if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80
+            || in5 >= 0x80 || in6 >= 0x80 || in7 >= 0x80 || in8 >= 0x80)
+            return 0; /*ERROR - invalid base32 character*/
+        if (in1 == '=' || in2 == '=')
+            return 0; /*ERROR - invalid padding*/
+        if (dwSrcSize == 0)
         {
-            /* 8 inputs */
-            in1 = *pSrc++;
-            in2 = *pSrc++;
-            in3 = *pSrc++;
-            in4 = *pSrc++;
-            in5 = *pSrc++;
-            in6 = *pSrc++;
-            in7 = *pSrc++;
-            in8 = *pSrc++;
-            dwSrcSize -= BASE32_INPUT;
-
-            /* Validate ASCII */
-            if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80
-                || in5 >= 0x80 || in6 >= 0x80 || in7 >= 0x80 || in8 >= 0x80)
-                return 0; /*ERROR - invalid base32 character*/
-            if (in1 == '=' || in2 == '=')
+            if (in3 == '=' && in4 != '=')
                 return 0; /*ERROR - invalid padding*/
-            if (dwSrcSize == 0)
-            {
-                if (in3 == '=' && in4 != '=')
-                    return 0; /*ERROR - invalid padding*/
-                if (in4 == '=' && in5 != '=')
-                    return 0; /*ERROR - invalid padding*/
-                if (in5 == '=' && in6 != '=')
-                    return 0; /*ERROR - invalid padding*/
-                if (in6 == '=' && in7 != '=')
-                    return 0; /*ERROR - invalid padding*/
-                if (in7 == '=' && in8 != '=')
-                    return 0; /*ERROR - invalid padding*/
-            }
-            else
-            {
-                if (in3 == '=' || in4 == '=' || in5 == '=' || in6 == '=' || in7 == '=' || in8 == '=')
-                    return 0; /*ERROR - invalid padding*/
-            }
-
-            /* Convert ASCII to base32 */
-            in1 = BASE32_TABLE[in1];
-            in2 = BASE32_TABLE[in2];
-            in3 = BASE32_TABLE[in3];
-            in4 = BASE32_TABLE[in4];
-            in5 = BASE32_TABLE[in5];
-            in6 = BASE32_TABLE[in6];
-            in7 = BASE32_TABLE[in7];
-            in8 = BASE32_TABLE[in8];
-
-            /* Validate base32 */
-            if (in1 > BASE32_MAX_VALUE || in2 > BASE32_MAX_VALUE)
-                return 0; /*ERROR - invalid base32 character*/
-            /*the following can be padding*/
-            if (in3 > BASE32_MAX_VALUE + 1 || in4 > BASE32_MAX_VALUE + 1
-                || in5 > BASE32_MAX_VALUE + 1 || in6 > BASE32_MAX_VALUE + 1
-                || in7 > BASE32_MAX_VALUE + 1 || in8 > BASE32_MAX_VALUE + 1)
-                return 0; /*ERROR - invalid base32 character*/
-
-            /* 5 outputs */
-            *pDest++ = ((in1 & 0x1f) << 3) | ((in2 & 0x1c) >> 2);
-            *pDest++ = ((in2 & 0x03) << 6) | ((in3 & 0x1f) << 1) | ((in4 & 0x10) >> 4);
-            *pDest++ = ((in4 & 0x0f) << 4) | ((in5 & 0x1e) >> 1);
-            *pDest++ = ((in5 & 0x01) << 7) | ((in6 & 0x1f) << 2) | ((in7 & 0x18) >> 3);
-            *pDest++ = ((in7 & 0x07) << 5) | (in8 & 0x1f);
-            dwDestSize += BASE32_OUTPUT;
-
-            /* Padding */
-            if (in8 == BASE32_MAX_VALUE + 1)
-            {
-                --dwDestSize;
-                assert((in7 == BASE32_MAX_VALUE + 1 && in6 == BASE32_MAX_VALUE + 1)
-                    || (in7 != BASE32_MAX_VALUE + 1));
-                if (in6 == BASE32_MAX_VALUE + 1)
-                {
-                    --dwDestSize;
-                    if (in5 == BASE32_MAX_VALUE + 1)
-                    {
-                        --dwDestSize;
-                        assert((in4 == BASE32_MAX_VALUE + 1 && in3 == BASE32_MAX_VALUE + 1)
-                            || (in4 != BASE32_MAX_VALUE + 1));
-                        if (in3 == BASE32_MAX_VALUE + 1)
-                        {
-                            --dwDestSize;
-                        }
-                    }
-                }
-            }
+            if (in4 == '=' && in5 != '=')
+                return 0; /*ERROR - invalid padding*/
+            if (in5 == '=' && in6 != '=')
+                return 0; /*ERROR - invalid padding*/
+            if (in6 == '=' && in7 != '=')
+                return 0; /*ERROR - invalid padding*/
+            if (in7 == '=' && in8 != '=')
+                return 0; /*ERROR - invalid padding*/
+        }
+        else
+        {
+            if (in3 == '=' || in4 == '=' || in5 == '=' || in6 == '=' || in7 == '=' || in8 == '=')
+                return 0; /*ERROR - invalid padding*/
         }
 
-        return dwDestSize;
+        /* Convert ASCII to base32 */
+        in1 = BASE32_TABLE[in1];
+        in2 = BASE32_TABLE[in2];
+        in3 = BASE32_TABLE[in3];
+        in4 = BASE32_TABLE[in4];
+        in5 = BASE32_TABLE[in5];
+        in6 = BASE32_TABLE[in6];
+        in7 = BASE32_TABLE[in7];
+        in8 = BASE32_TABLE[in8];
+
+        /* Validate base32 */
+        if (in1 > BASE32_MAX_VALUE || in2 > BASE32_MAX_VALUE)
+            return 0; /*ERROR - invalid base32 character*/
+        /*the following can be padding*/
+        if (in3 > BASE32_MAX_VALUE + 1 || in4 > BASE32_MAX_VALUE + 1
+            || in5 > BASE32_MAX_VALUE + 1 || in6 > BASE32_MAX_VALUE + 1
+            || in7 > BASE32_MAX_VALUE + 1 || in8 > BASE32_MAX_VALUE + 1)
+            return 0; /*ERROR - invalid base32 character*/
+
+        /* 5 outputs */
+        *pDest++ = ((in1 & 0x1f) << 3) | ((in2 & 0x1c) >> 2);
+        *pDest++ = ((in2 & 0x03) << 6) | ((in3 & 0x1f) << 1) | ((in4 & 0x10) >> 4);
+        *pDest++ = ((in4 & 0x0f) << 4) | ((in5 & 0x1e) >> 1);
+        *pDest++ = ((in5 & 0x01) << 7) | ((in6 & 0x1f) << 2) | ((in7 & 0x18) >> 3);
+        *pDest++ = ((in7 & 0x07) << 5) | (in8 & 0x1f);
+        dwDestSize += BASE32_OUTPUT;
+
+        /* Padding */
+        if (in8 != BASE32_MAX_VALUE + 1)
+            continue;
+        --dwDestSize;
+        assert((in7 == BASE32_MAX_VALUE + 1 && in6 == BASE32_MAX_VALUE + 1)
+            || (in7 != BASE32_MAX_VALUE + 1));
+        if (in6 != BASE32_MAX_VALUE + 1)
+            continue;
+        --dwDestSize;
+        if (in5 != BASE32_MAX_VALUE + 1)
+            continue;
+        --dwDestSize;
+        assert((in4 == BASE32_MAX_VALUE + 1 && in3 == BASE32_MAX_VALUE + 1)
+            || (in4 != BASE32_MAX_VALUE + 1));
+        if (in3 != BASE32_MAX_VALUE + 1)
+            continue;
+        --dwDestSize;
     }
-    else
-        return 0; /*ERROR - null pointer, or srcChars isn't a multiple of 8*/
+
+    return dwDestSize;
 }
 
 size_t cyoBase32DecodeBlockA(void* dest, const char* src)
 {
-    if (dest && src)
-    {
-        const char* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        unsigned char in1, in2, in3, in4, in5, in6, in7, in8;
+    const char* pSrc;
+    unsigned char* pDest;
+    unsigned char in1, in2, in3, in4, in5, in6, in7, in8;
 
-        /* 8 inputs */
-        in1 = *pSrc++;
-        in2 = *pSrc++;
-        in3 = *pSrc++;
-        in4 = *pSrc++;
-        in5 = *pSrc++;
-        in6 = *pSrc++;
-        in7 = *pSrc++;
-        in8 = *pSrc++;
-
-        /* Validate ASCII */
-        if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80
-            || in5 >= 0x80 || in6 >= 0x80 || in7 >= 0x80 || in8 >= 0x80)
-            return 0; /*ERROR - invalid base32 character*/
-
-        /* Convert ASCII to base32 */
-        in1 = BASE32_TABLE[in1];
-        in2 = BASE32_TABLE[in2];
-        in3 = BASE32_TABLE[in3];
-        in4 = BASE32_TABLE[in4];
-        in5 = BASE32_TABLE[in5];
-        in6 = BASE32_TABLE[in6];
-        in7 = BASE32_TABLE[in7];
-        in8 = BASE32_TABLE[in8];
-
-        /* Validate base32 */
-        if (in1 > BASE32_MAX_VALUE || in2 > BASE32_MAX_VALUE)
-            return 0; /*ERROR - invalid base32 character*/
-        /*the following can be padding*/
-        if (in3 > BASE32_MAX_VALUE + 1 || in4 > BASE32_MAX_VALUE + 1
-            || in5 > BASE32_MAX_VALUE + 1 || in6 > BASE32_MAX_VALUE + 1
-            || in7 > BASE32_MAX_VALUE + 1 || in8 > BASE32_MAX_VALUE + 1)
-            return 0; /*ERROR - invalid base32 character*/
-
-        /* 5 outputs */
-        *pDest++ = ((in1 & 0x1f) << 3) | ((in2 & 0x1c) >> 2);
-        *pDest++ = ((in2 & 0x03) << 6) | ((in3 & 0x1f) << 1) | ((in4 & 0x10) >> 4);
-        *pDest++ = ((in4 & 0x0f) << 4) | ((in5 & 0x1e) >> 1);
-        *pDest++ = ((in5 & 0x01) << 7) | ((in6 & 0x1f) << 2) | ((in7 & 0x18) >> 3);
-        *pDest++ = ((in7 & 0x07) << 5) | (in8 & 0x1f);
-
-        return BASE32_OUTPUT;
-    }
-    else
+    if (!dest || !src)
         return 0; /*ERROR - null pointer*/
+
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+
+    /* 8 inputs */
+    in1 = *pSrc++;
+    in2 = *pSrc++;
+    in3 = *pSrc++;
+    in4 = *pSrc++;
+    in5 = *pSrc++;
+    in6 = *pSrc++;
+    in7 = *pSrc++;
+    in8 = *pSrc++;
+
+    /* Validate ASCII */
+    if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80
+        || in5 >= 0x80 || in6 >= 0x80 || in7 >= 0x80 || in8 >= 0x80)
+        return 0; /*ERROR - invalid base32 character*/
+
+    /* Convert ASCII to base32 */
+    in1 = BASE32_TABLE[in1];
+    in2 = BASE32_TABLE[in2];
+    in3 = BASE32_TABLE[in3];
+    in4 = BASE32_TABLE[in4];
+    in5 = BASE32_TABLE[in5];
+    in6 = BASE32_TABLE[in6];
+    in7 = BASE32_TABLE[in7];
+    in8 = BASE32_TABLE[in8];
+
+    /* Validate base32 */
+    if (in1 > BASE32_MAX_VALUE || in2 > BASE32_MAX_VALUE)
+        return 0; /*ERROR - invalid base32 character*/
+    /*the following can be padding*/
+    if (in3 > BASE32_MAX_VALUE + 1 || in4 > BASE32_MAX_VALUE + 1
+        || in5 > BASE32_MAX_VALUE + 1 || in6 > BASE32_MAX_VALUE + 1
+        || in7 > BASE32_MAX_VALUE + 1 || in8 > BASE32_MAX_VALUE + 1)
+        return 0; /*ERROR - invalid base32 character*/
+
+    /* 5 outputs */
+    *pDest++ = ((in1 & 0x1f) << 3) | ((in2 & 0x1c) >> 2);
+    *pDest++ = ((in2 & 0x03) << 6) | ((in3 & 0x1f) << 1) | ((in4 & 0x10) >> 4);
+    *pDest++ = ((in4 & 0x0f) << 4) | ((in5 & 0x1e) >> 1);
+    *pDest++ = ((in5 & 0x01) << 7) | ((in6 & 0x1f) << 2) | ((in7 & 0x18) >> 3);
+    *pDest++ = ((in7 & 0x07) << 5) | (in8 & 0x1f);
+    return BASE32_OUTPUT;
 }
 
 size_t cyoBase32DecodeBlockW(void* dest, const wchar_t* src)
 {
-    if (dest && src)
-    {
-        const wchar_t* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        wchar_t in1, in2, in3, in4, in5, in6, in7, in8;
+    const wchar_t* pSrc;
+    unsigned char* pDest;
+    wchar_t in1, in2, in3, in4, in5, in6, in7, in8;
 
-        /* 8 inputs */
-        in1 = *pSrc++;
-        in2 = *pSrc++;
-        in3 = *pSrc++;
-        in4 = *pSrc++;
-        in5 = *pSrc++;
-        in6 = *pSrc++;
-        in7 = *pSrc++;
-        in8 = *pSrc++;
-
-        /* Validate ASCII */
-        if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80
-            || in5 >= 0x80 || in6 >= 0x80 || in7 >= 0x80 || in8 >= 0x80)
-            return 0; /*ERROR - invalid base32 character*/
-
-        /* Convert ASCII to base32 */
-        in1 = BASE32_TABLE[in1];
-        in2 = BASE32_TABLE[in2];
-        in3 = BASE32_TABLE[in3];
-        in4 = BASE32_TABLE[in4];
-        in5 = BASE32_TABLE[in5];
-        in6 = BASE32_TABLE[in6];
-        in7 = BASE32_TABLE[in7];
-        in8 = BASE32_TABLE[in8];
-
-        /* Validate base32 */
-        if (in1 > BASE32_MAX_VALUE || in2 > BASE32_MAX_VALUE)
-            return 0; /*ERROR - invalid base32 character*/
-        /*the following can be padding*/
-        if (in3 > BASE32_MAX_VALUE + 1 || in4 > BASE32_MAX_VALUE + 1
-            || in5 > BASE32_MAX_VALUE + 1 || in6 > BASE32_MAX_VALUE + 1
-            || in7 > BASE32_MAX_VALUE + 1 || in8 > BASE32_MAX_VALUE + 1)
-            return 0; /*ERROR - invalid base32 character*/
-
-        /* 5 outputs */
-        *pDest++ = ((in1 & 0x1f) << 3) | ((in2 & 0x1c) >> 2);
-        *pDest++ = ((in2 & 0x03) << 6) | ((in3 & 0x1f) << 1) | ((in4 & 0x10) >> 4);
-        *pDest++ = ((in4 & 0x0f) << 4) | ((in5 & 0x1e) >> 1);
-        *pDest++ = ((in5 & 0x01) << 7) | ((in6 & 0x1f) << 2) | ((in7 & 0x18) >> 3);
-        *pDest++ = ((in7 & 0x07) << 5) | (in8 & 0x1f);
-
-        return BASE32_OUTPUT;
-    }
-    else
+    if (!dest || !src)
         return 0; /*ERROR - null pointer*/
+
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+
+    /* 8 inputs */
+    in1 = *pSrc++;
+    in2 = *pSrc++;
+    in3 = *pSrc++;
+    in4 = *pSrc++;
+    in5 = *pSrc++;
+    in6 = *pSrc++;
+    in7 = *pSrc++;
+    in8 = *pSrc++;
+
+    /* Validate ASCII */
+    if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80
+        || in5 >= 0x80 || in6 >= 0x80 || in7 >= 0x80 || in8 >= 0x80)
+        return 0; /*ERROR - invalid base32 character*/
+
+    /* Convert ASCII to base32 */
+    in1 = BASE32_TABLE[in1];
+    in2 = BASE32_TABLE[in2];
+    in3 = BASE32_TABLE[in3];
+    in4 = BASE32_TABLE[in4];
+    in5 = BASE32_TABLE[in5];
+    in6 = BASE32_TABLE[in6];
+    in7 = BASE32_TABLE[in7];
+    in8 = BASE32_TABLE[in8];
+
+    /* Validate base32 */
+    if (in1 > BASE32_MAX_VALUE || in2 > BASE32_MAX_VALUE)
+        return 0; /*ERROR - invalid base32 character*/
+    /*the following can be padding*/
+    if (in3 > BASE32_MAX_VALUE + 1 || in4 > BASE32_MAX_VALUE + 1
+        || in5 > BASE32_MAX_VALUE + 1 || in6 > BASE32_MAX_VALUE + 1
+        || in7 > BASE32_MAX_VALUE + 1 || in8 > BASE32_MAX_VALUE + 1)
+        return 0; /*ERROR - invalid base32 character*/
+
+    /* 5 outputs */
+    *pDest++ = ((in1 & 0x1f) << 3) | ((in2 & 0x1c) >> 2);
+    *pDest++ = ((in2 & 0x03) << 6) | ((in3 & 0x1f) << 1) | ((in4 & 0x10) >> 4);
+    *pDest++ = ((in4 & 0x0f) << 4) | ((in5 & 0x1e) >> 1);
+    *pDest++ = ((in5 & 0x01) << 7) | ((in6 & 0x1f) << 2) | ((in7 & 0x18) >> 3);
+    *pDest++ = ((in7 & 0x07) << 5) | (in8 & 0x1f);
+    return BASE32_OUTPUT;
 }
 
 /****************************** Base64 Decoding ******************************/
 
 /*
- * output 3 bytes for every 4 input:
+ * output 3 bytes for every 4 input chars:
  *
  *               outputs: 1        2        3
  * inputs: 1 = --111111 = 111111--
@@ -723,14 +727,12 @@ static const unsigned char BASE64_TABLE[ 0x80 ] = {
 
 int cyoBase64ValidateA(const char* src, size_t srcChars)
 {
-    return cyoBaseXXValidateA(src, srcChars, BASE64_INPUT,
-        BASE64_MAX_PADDING, BASE64_MAX_VALUE, BASE64_TABLE);
+    return cyoBaseXXValidateA(src, srcChars, BASE64_INPUT, BASE64_MAX_PADDING, BASE64_MAX_VALUE, BASE64_TABLE);
 }
 
 int cyoBase64ValidateW(const wchar_t* src, size_t srcChars)
 {
-    return cyoBaseXXValidateW(src, srcChars, BASE64_INPUT,
-        BASE64_MAX_PADDING, BASE64_MAX_VALUE, BASE64_TABLE);
+    return cyoBaseXXValidateW(src, srcChars, BASE64_INPUT, BASE64_MAX_PADDING, BASE64_MAX_VALUE, BASE64_TABLE);
 }
 
 size_t cyoBase64DecodeGetLength(size_t srcChars)
@@ -740,234 +742,239 @@ size_t cyoBase64DecodeGetLength(size_t srcChars)
 
 size_t cyoBase64DecodeA(void* dest, const char* src, size_t srcChars)
 {
-    if (dest && src && (srcChars % BASE64_INPUT == 0))
+    const char* pSrc;
+    unsigned char* pDest;
+    size_t dwSrcSize;
+    size_t dwDestSize;
+
+    if (!dest || !src || (srcChars % BASE64_INPUT != 0))
+        return 0; /*ERROR - null pointer, or srcChars isn't a multiple of 4*/
+
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+    dwSrcSize = srcChars;
+    dwDestSize = 0;
+
+    while (dwSrcSize >= 1)
     {
-        const char* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        size_t dwSrcSize = srcChars;
-        size_t dwDestSize = 0;
         unsigned char in1, in2, in3, in4;
 
-        while (dwSrcSize >= 1)
+        /* 4 inputs */
+        in1 = *pSrc++;
+        in2 = *pSrc++;
+        in3 = *pSrc++;
+        in4 = *pSrc++;
+        dwSrcSize -= BASE64_INPUT;
+
+        /* Validate ASCII */
+        if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80)
+            return 0; /*ERROR - invalid base64 character*/
+        if (in1 == '=' || in2 == '=')
+            return 0; /*ERROR - invalid padding*/
+        if (dwSrcSize == 0)
         {
-            /* 4 inputs */
-            in1 = *pSrc++;
-            in2 = *pSrc++;
-            in3 = *pSrc++;
-            in4 = *pSrc++;
-            dwSrcSize -= BASE64_INPUT;
-
-            /* Validate ASCII */
-            if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80)
-                return 0; /*ERROR - invalid base64 character*/
-            if (in1 == '=' || in2 == '=')
+            if (in3 == '=' && in4 != '=')
                 return 0; /*ERROR - invalid padding*/
-            if (dwSrcSize == 0)
-            {
-                if (in3 == '=' && in4 != '=')
-                    return 0; /*ERROR - invalid padding*/
-            }
-            else
-            {
-                if (in3 == '=' || in4 == '=')
-                    return 0; /*ERROR - invalid padding*/
-            }
-
-            /* Convert ASCII to base64 */
-            in1 = BASE64_TABLE[in1];
-            in2 = BASE64_TABLE[in2];
-            in3 = BASE64_TABLE[in3];
-            in4 = BASE64_TABLE[in4];
-
-            /* Validate base64 */
-            if (in1 > BASE64_MAX_VALUE || in2 > BASE64_MAX_VALUE)
-                return 0; /*ERROR - invalid base64 character*/
-            /*the following can be padding*/
-            if (in3 > BASE64_MAX_VALUE + 1 || in4 > BASE64_MAX_VALUE + 1)
-                return 0; /*ERROR - invalid base64 character*/
-
-            /* 3 outputs */
-            *pDest++ = ((in1 & 0x3f) << 2) | ((in2 & 0x30) >> 4);
-            *pDest++ = ((in2 & 0x0f) << 4) | ((in3 & 0x3c) >> 2);
-            *pDest++ = ((in3 & 0x03) << 6) | (in4 & 0x3f);
-            dwDestSize += BASE64_OUTPUT;
-
-            /* Padding */
-            if (in4 == BASE64_MAX_VALUE + 1)
-            {
-                --dwDestSize;
-                if (in3 == BASE64_MAX_VALUE + 1)
-                {
-                    --dwDestSize;
-                }
-            }
+        }
+        else
+        {
+            if (in3 == '=' || in4 == '=')
+                return 0; /*ERROR - invalid padding*/
         }
 
-        return dwDestSize;
+        /* Convert ASCII to base64 */
+        in1 = BASE64_TABLE[in1];
+        in2 = BASE64_TABLE[in2];
+        in3 = BASE64_TABLE[in3];
+        in4 = BASE64_TABLE[in4];
+
+        /* Validate base64 */
+        if (in1 > BASE64_MAX_VALUE || in2 > BASE64_MAX_VALUE)
+            return 0; /*ERROR - invalid base64 character*/
+        /*the following can be padding*/
+        if (in3 > BASE64_MAX_VALUE + 1 || in4 > BASE64_MAX_VALUE + 1)
+            return 0; /*ERROR - invalid base64 character*/
+
+        /* 3 outputs */
+        *pDest++ = ((in1 & 0x3f) << 2) | ((in2 & 0x30) >> 4);
+        *pDest++ = ((in2 & 0x0f) << 4) | ((in3 & 0x3c) >> 2);
+        *pDest++ = ((in3 & 0x03) << 6) | (in4 & 0x3f);
+        dwDestSize += BASE64_OUTPUT;
+
+        /* Padding */
+        if (in4 != BASE64_MAX_VALUE + 1)
+            continue;
+        --dwDestSize;
+        if (in3 != BASE64_MAX_VALUE + 1)
+            continue;
+        --dwDestSize;
     }
-    else
-        return 0; /*ERROR - null pointer, or srcChars isn't a multiple of 4*/
+
+    return dwDestSize;
 }
 
 size_t cyoBase64DecodeW(void* dest, const wchar_t* src, size_t srcChars)
 {
-    if (dest && src && (srcChars % BASE64_INPUT == 0))
+    const wchar_t* pSrc;
+    unsigned char* pDest;
+    size_t dwSrcSize;
+    size_t dwDestSize;
+
+    if (!dest || !src || (srcChars % BASE64_INPUT != 0))
+        return 0; /*ERROR - null pointer, or srcChars isn't a multiple of 4*/
+
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+    dwSrcSize = srcChars;
+    dwDestSize = 0;
+
+    while (dwSrcSize >= 1)
     {
-        const wchar_t* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        size_t dwSrcSize = srcChars;
-        size_t dwDestSize = 0;
         wchar_t in1, in2, in3, in4;
 
-        while (dwSrcSize >= 1)
+        /* 4 inputs */
+        in1 = *pSrc++;
+        in2 = *pSrc++;
+        in3 = *pSrc++;
+        in4 = *pSrc++;
+        dwSrcSize -= BASE64_INPUT;
+
+        /* Validate ASCII */
+        if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80)
+            return 0; /*ERROR - invalid base64 character*/
+        if (in1 == '=' || in2 == '=')
+            return 0; /*ERROR - invalid padding*/
+        if (dwSrcSize == 0)
         {
-            /* 4 inputs */
-            in1 = *pSrc++;
-            in2 = *pSrc++;
-            in3 = *pSrc++;
-            in4 = *pSrc++;
-            dwSrcSize -= BASE64_INPUT;
-
-            /* Validate ASCII */
-            if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80)
-                return 0; /*ERROR - invalid base64 character*/
-            if (in1 == '=' || in2 == '=')
+            if (in3 == '=' && in4 != '=')
                 return 0; /*ERROR - invalid padding*/
-            if (dwSrcSize == 0)
-            {
-                if (in3 == '=' && in4 != '=')
-                    return 0; /*ERROR - invalid padding*/
-            }
-            else
-            {
-                if (in3 == '=' || in4 == '=')
-                    return 0; /*ERROR - invalid padding*/
-            }
-
-            /* Convert ASCII to base64 */
-            in1 = BASE64_TABLE[in1];
-            in2 = BASE64_TABLE[in2];
-            in3 = BASE64_TABLE[in3];
-            in4 = BASE64_TABLE[in4];
-
-            /* Validate base64 */
-            if (in1 > BASE64_MAX_VALUE || in2 > BASE64_MAX_VALUE)
-                return 0; /*ERROR - invalid base64 character*/
-            /*the following can be padding*/
-            if (in3 > BASE64_MAX_VALUE + 1 || in4 > BASE64_MAX_VALUE + 1)
-                return 0; /*ERROR - invalid base64 character*/
-
-            /* 3 outputs */
-            *pDest++ = ((in1 & 0x3f) << 2) | ((in2 & 0x30) >> 4);
-            *pDest++ = ((in2 & 0x0f) << 4) | ((in3 & 0x3c) >> 2);
-            *pDest++ = ((in3 & 0x03) << 6) | (in4 & 0x3f);
-            dwDestSize += BASE64_OUTPUT;
-
-            /* Padding */
-            if (in4 == BASE64_MAX_VALUE + 1)
-            {
-                --dwDestSize;
-                if (in3 == BASE64_MAX_VALUE + 1)
-                {
-                    --dwDestSize;
-                }
-            }
+        }
+        else
+        {
+            if (in3 == '=' || in4 == '=')
+                return 0; /*ERROR - invalid padding*/
         }
 
-        return dwDestSize;
+        /* Convert ASCII to base64 */
+        in1 = BASE64_TABLE[in1];
+        in2 = BASE64_TABLE[in2];
+        in3 = BASE64_TABLE[in3];
+        in4 = BASE64_TABLE[in4];
+
+        /* Validate base64 */
+        if (in1 > BASE64_MAX_VALUE || in2 > BASE64_MAX_VALUE)
+            return 0; /*ERROR - invalid base64 character*/
+        /*the following can be padding*/
+        if (in3 > BASE64_MAX_VALUE + 1 || in4 > BASE64_MAX_VALUE + 1)
+            return 0; /*ERROR - invalid base64 character*/
+
+        /* 3 outputs */
+        *pDest++ = ((in1 & 0x3f) << 2) | ((in2 & 0x30) >> 4);
+        *pDest++ = ((in2 & 0x0f) << 4) | ((in3 & 0x3c) >> 2);
+        *pDest++ = ((in3 & 0x03) << 6) | (in4 & 0x3f);
+        dwDestSize += BASE64_OUTPUT;
+
+        /* Padding */
+        if (in4 != BASE64_MAX_VALUE + 1)
+            continue;
+        --dwDestSize;
+        if (in3 != BASE64_MAX_VALUE + 1)
+            continue;
+        --dwDestSize;
     }
-    else
-        return 0; /*ERROR - null pointer, or srcChars isn't a multiple of 4*/
+
+    return dwDestSize;
 }
 
 size_t cyoBase64DecodeBlockA(void* dest, const char* src)
 {
-    if (dest && src)
-    {
-        const char* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        unsigned char in1, in2, in3, in4;
+    const char* pSrc;
+    unsigned char* pDest;
+    unsigned char in1, in2, in3, in4;
 
-        /* 4 inputs */
-        in1 = *pSrc++;
-        in2 = *pSrc++;
-        in3 = *pSrc++;
-        in4 = *pSrc++;
-
-        /* Validate ASCII */
-        if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80)
-            return 0; /*ERROR - invalid base64 character*/
-
-        /* Convert ASCII to base64 */
-        in1 = BASE64_TABLE[in1];
-        in2 = BASE64_TABLE[in2];
-        in3 = BASE64_TABLE[in3];
-        in4 = BASE64_TABLE[in4];
-
-        /* Validate base64 */
-        if (in1 > BASE64_MAX_VALUE || in2 > BASE64_MAX_VALUE)
-            return 0; /*ERROR - invalid base64 character*/
-        /*the following can be padding*/
-        if (in3 > BASE64_MAX_VALUE + 1 || in4 > BASE64_MAX_VALUE + 1)
-            return 0; /*ERROR - invalid base64 character*/
-
-        /* 3 outputs */
-        *pDest++ = ((in1 & 0x3f) << 2) | ((in2 & 0x30) >> 4);
-        *pDest++ = ((in2 & 0x0f) << 4) | ((in3 & 0x3c) >> 2);
-        *pDest++ = ((in3 & 0x03) << 6) | (in4 & 0x3f);
-
-        return BASE64_OUTPUT;
-    }
-    else
+    if (!dest || !src)
         return 0; /*ERROR - null pointer*/
+
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+
+    /* 4 inputs */
+    in1 = *pSrc++;
+    in2 = *pSrc++;
+    in3 = *pSrc++;
+    in4 = *pSrc++;
+
+    /* Validate ASCII */
+    if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80)
+        return 0; /*ERROR - invalid base64 character*/
+
+    /* Convert ASCII to base64 */
+    in1 = BASE64_TABLE[in1];
+    in2 = BASE64_TABLE[in2];
+    in3 = BASE64_TABLE[in3];
+    in4 = BASE64_TABLE[in4];
+
+    /* Validate base64 */
+    if (in1 > BASE64_MAX_VALUE || in2 > BASE64_MAX_VALUE)
+        return 0; /*ERROR - invalid base64 character*/
+    /*the following can be padding*/
+    if (in3 > BASE64_MAX_VALUE + 1 || in4 > BASE64_MAX_VALUE + 1)
+        return 0; /*ERROR - invalid base64 character*/
+
+    /* 3 outputs */
+    *pDest++ = ((in1 & 0x3f) << 2) | ((in2 & 0x30) >> 4);
+    *pDest++ = ((in2 & 0x0f) << 4) | ((in3 & 0x3c) >> 2);
+    *pDest++ = ((in3 & 0x03) << 6) | (in4 & 0x3f);
+    return BASE64_OUTPUT;
 }
 
 size_t cyoBase64DecodeBlockW(void* dest, const wchar_t* src)
 {
-    if (dest && src)
-    {
-        const wchar_t* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        wchar_t in1, in2, in3, in4;
+    const wchar_t* pSrc;
+    unsigned char* pDest;
+    wchar_t in1, in2, in3, in4;
 
-        /* 4 inputs */
-        in1 = *pSrc++;
-        in2 = *pSrc++;
-        in3 = *pSrc++;
-        in4 = *pSrc++;
-
-        /* Validate ASCII */
-        if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80)
-            return 0; /*ERROR - invalid base64 character*/
-
-        /* Convert ASCII to base64 */
-        in1 = BASE64_TABLE[in1];
-        in2 = BASE64_TABLE[in2];
-        in3 = BASE64_TABLE[in3];
-        in4 = BASE64_TABLE[in4];
-
-        /* Validate base64 */
-        if (in1 > BASE64_MAX_VALUE || in2 > BASE64_MAX_VALUE)
-            return 0; /*ERROR - invalid base64 character*/
-        /*the following can be padding*/
-        if (in3 > BASE64_MAX_VALUE + 1 || in4 > BASE64_MAX_VALUE + 1)
-            return 0; /*ERROR - invalid base64 character*/
-
-        /* 3 outputs */
-        *pDest++ = ((in1 & 0x3f) << 2) | ((in2 & 0x30) >> 4);
-        *pDest++ = ((in2 & 0x0f) << 4) | ((in3 & 0x3c) >> 2);
-        *pDest++ = ((in3 & 0x03) << 6) | (in4 & 0x3f);
-
-        return BASE64_OUTPUT;
-    }
-    else
+    if (!dest || !src)
         return 0; /*ERROR - null pointer*/
+
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+
+    /* 4 inputs */
+    in1 = *pSrc++;
+    in2 = *pSrc++;
+    in3 = *pSrc++;
+    in4 = *pSrc++;
+
+    /* Validate ASCII */
+    if (in1 >= 0x80 || in2 >= 0x80 || in3 >= 0x80 || in4 >= 0x80)
+        return 0; /*ERROR - invalid base64 character*/
+
+    /* Convert ASCII to base64 */
+    in1 = BASE64_TABLE[in1];
+    in2 = BASE64_TABLE[in2];
+    in3 = BASE64_TABLE[in3];
+    in4 = BASE64_TABLE[in4];
+
+    /* Validate base64 */
+    if (in1 > BASE64_MAX_VALUE || in2 > BASE64_MAX_VALUE)
+        return 0; /*ERROR - invalid base64 character*/
+    /*the following can be padding*/
+    if (in3 > BASE64_MAX_VALUE + 1 || in4 > BASE64_MAX_VALUE + 1)
+        return 0; /*ERROR - invalid base64 character*/
+
+    /* 3 outputs */
+    *pDest++ = ((in1 & 0x3f) << 2) | ((in2 & 0x30) >> 4);
+    *pDest++ = ((in2 & 0x0f) << 4) | ((in3 & 0x3c) >> 2);
+    *pDest++ = ((in3 & 0x03) << 6) | (in4 & 0x3f);
+    return BASE64_OUTPUT;
 }
 
 /****************************** Base85 Decoding ******************************/
 
 /*
- * output 4 bytes for every 5 input
+ * output 4 bytes for every 5 input chars.
+ * final block: output 1-4 bytes for 1-5 input chars.
  */
 
 static const size_t BASE85_INPUT = 5;
@@ -978,12 +985,19 @@ static const size_t BASE85_OUTPUT = 4;
 
 int cyoBase85ValidateA(const char* src, size_t srcChars)
 {
-    const char* pSrc = src;
-    size_t dwSrcSize = srcChars;
-    unsigned char in1, in2, in3, in4, in5;
+    const char* pSrc;
+    size_t dwSrcSize;
+
+    if (!src)
+        return -1; /*ERROR - NULL pointer*/
+
+    pSrc = src;
+    dwSrcSize = srcChars;
 
     while (dwSrcSize >= 1)
     {
+        unsigned char in1, in2, in3, in4, in5;
+
 #if FOLD_ZERO
         if (*pSrc == 'z')
         {
@@ -1001,8 +1015,7 @@ int cyoBase85ValidateA(const char* src, size_t srcChars)
         }
 #endif
 
-        /* 5 inputs */
-        assert(dwSrcSize >= 1);
+        /* 1-5 input chars */
         in1 = (*pSrc++ - 33);
         --dwSrcSize;
         in2 = in3 = in4 = in5 = 0;
@@ -1038,12 +1051,19 @@ int cyoBase85ValidateA(const char* src, size_t srcChars)
 
 int cyoBase85ValidateW(const wchar_t* src, size_t srcChars)
 {
-    const wchar_t* pSrc = src;
-    size_t dwSrcSize = srcChars;
-    wchar_t in1, in2, in3, in4, in5;
+    const wchar_t* pSrc;
+    size_t dwSrcSize;
+
+    if (!src)
+        return -1; /*ERROR - NULL pointer*/
+
+    pSrc = src;
+    dwSrcSize = srcChars;
 
     while (dwSrcSize >= 1)
     {
+        wchar_t in1, in2, in3, in4, in5;
+
 #if FOLD_ZERO
         if (*pSrc == L'z')
         {
@@ -1061,8 +1081,7 @@ int cyoBase85ValidateW(const wchar_t* src, size_t srcChars)
         }
 #endif
 
-        /* 5 inputs */
-        assert(dwSrcSize >= 1);
+        /* 1-5 input chars */
         in1 = (*pSrc++ - 33);
         --dwSrcSize;
         in2 = in3 = in4 = in5 = 0;
@@ -1123,290 +1142,269 @@ static unsigned int cyoBase85Power(unsigned int mult, int count)
     return total;
 }
 
+static unsigned char* cyoBase85OutputX4(unsigned char* output, char value)
+{
+    *output++ = value;
+    *output++ = value;
+    *output++ = value;
+    *output++ = value;
+    return output;
+}
+
 size_t cyoBase85DecodeA(void* dest, const char* src, size_t srcChars)
 {
-    if (dest && src)
-    {
-        const char* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        size_t dwSrcSize = srcChars;
-        size_t dwDestSize = 0;
-        unsigned char in1, in2, in3, in4, in5;
-        int padding;
+    const char* pSrc;
+    unsigned char* pDest;
+    size_t dwSrcSize;
+    size_t dwDestSize;
 
-        while (dwSrcSize >= 1)
-        {
-#if FOLD_ZERO
-            if (*pSrc == 'z')
-            {
-                ++pSrc;
-                *pDest++ = 0;
-                *pDest++ = 0;
-                *pDest++ = 0;
-                *pDest++ = 0;
-                dwDestSize += BASE85_OUTPUT;
-                continue;
-            }
-#endif
-#if FOLD_SPACES
-            if (*pSrc == 'y')
-            {
-                ++pSrc;
-                *pDest++ = 0x20;
-                *pDest++ = 0x20;
-                *pDest++ = 0x20;
-                *pDest++ = 0x20;
-                dwDestSize += BASE85_OUTPUT;
-                continue;
-            }
-#endif
-
-            /* 5 inputs */
-            padding = 0;
-            pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in1, &padding);
-            if (padding != 0)
-                return 0; /*ERROR - insufficient data*/
-            pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in2, &padding);
-            if (padding != 0)
-                return 0; /*ERROR - insufficient data*/
-            pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in3, &padding);
-            pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in4, &padding);
-            pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in5, &padding);
-            dwSrcSize -= (BASE85_INPUT - padding);
-
-            /* Validate */
-            if (in1 >= 85 || in2 >= 85 || in3 >= 85 || in4 >= 85 || in5 >= 85)
-                return 0; /*ERROR - invalid base85 character*/
-
-            /* Output */
-            unsigned int n = (in1 * cyoBase85Power(85, 4))
-                + (in2 * cyoBase85Power(85, 3))
-                + (in3 * cyoBase85Power(85, 2))
-                + (in4 * cyoBase85Power(85, 1))
-                + in5;
-            *pDest++ = (unsigned char)(n >> 24);
-            ++dwDestSize;
-            if (padding <= 2)
-            {
-                *pDest++ = (unsigned char)(n >> 16);
-                ++dwDestSize;
-                if (padding <= 1)
-                {
-                    *pDest++ = (unsigned char)(n >> 8);
-                    ++dwDestSize;
-                    if (padding == 0)
-                    {
-                        *pDest++ = (unsigned char)n;
-                        ++dwDestSize;
-                    }
-                }
-            }
-        }
-
-        return dwDestSize;
-    }
-    else
+    if (!dest || !src)
         return 0; /*ERROR - null pointer*/
-}
 
-size_t cyoBase85DecodeW(void* dest, const wchar_t* src, size_t srcChars)
-{
-    if (dest && src)
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+    dwSrcSize = srcChars;
+    dwDestSize = 0;
+
+    while (dwSrcSize >= 1)
     {
-        const wchar_t* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        size_t dwSrcSize = srcChars;
-        size_t dwDestSize = 0;
         unsigned char in1, in2, in3, in4, in5;
-        int padding;
-
-        while (dwSrcSize >= 1)
-        {
-#if FOLD_ZERO
-            if (*pSrc == L'z')
-            {
-                ++pSrc;
-                *pDest++ = 0;
-                *pDest++ = 0;
-                *pDest++ = 0;
-                *pDest++ = 0;
-                dwDestSize += BASE85_OUTPUT;
-                continue;
-            }
-#endif
-#if FOLD_SPACES
-            if (*pSrc == L'y')
-            {
-                ++pSrc;
-                *pDest++ = 0x20;
-                *pDest++ = 0x20;
-                *pDest++ = 0x20;
-                *pDest++ = 0x20;
-                dwDestSize += BASE85_OUTPUT;
-                continue;
-            }
-#endif
-
-            /* 5 inputs */
-            padding = 0;
-            pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in1, &padding);
-            if (padding != 0)
-                return 0; /*ERROR - insufficient data*/
-            pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in2, &padding);
-            if (padding != 0)
-                return 0; /*ERROR - insufficient data*/
-            pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in3, &padding);
-            pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in4, &padding);
-            pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in5, &padding);
-            dwSrcSize -= (BASE85_INPUT - padding);
-
-            /* Validate */
-            if (in1 >= 85 || in2 >= 85 || in3 >= 85 || in4 >= 85 || in5 >= 85)
-                return 0; /*ERROR - invalid base85 character*/
-
-            /* Output */
-            unsigned int n = (in1 * cyoBase85Power(85, 4))
-                + (in2 * cyoBase85Power(85, 3))
-                + (in3 * cyoBase85Power(85, 2))
-                + (in4 * cyoBase85Power(85, 1))
-                + in5;
-            *pDest++ = (unsigned char)(n >> 24);
-            ++dwDestSize;
-            if (padding <= 2)
-            {
-                *pDest++ = (unsigned char)(n >> 16);
-                ++dwDestSize;
-                if (padding <= 1)
-                {
-                    *pDest++ = (unsigned char)(n >> 8);
-                    ++dwDestSize;
-                    if (padding == 0)
-                    {
-                        *pDest++ = (unsigned char)n;
-                        ++dwDestSize;
-                    }
-                }
-            }
-        }
-
-        return dwDestSize;
-    }
-    else
-        return 0; /*ERROR - null pointer*/
-}
-
-size_t cyoBase85DecodeBlockA(void* dest, const char* src)
-{
-    if (dest && src)
-    {
-        const char* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        unsigned char in1, in2, in3, in4, in5;
-        unsigned int out;
+        int padding, shift;
+        unsigned int n;
 
 #if FOLD_ZERO
         if (*pSrc == 'z')
         {
-            *pDest++ = 0;
-            *pDest++ = 0;
-            *pDest++ = 0;
-            *pDest++ = 0;
-            return BASE85_OUTPUT;
+            ++pSrc;
+            pDest = cyoBase85OutputX4(pDest, 0);
+            dwDestSize += BASE85_OUTPUT;
+            continue;
         }
 #endif
 #if FOLD_SPACES
         if (*pSrc == 'y')
         {
-            *pDest++ = 0x20;
-            *pDest++ = 0x20;
-            *pDest++ = 0x20;
-            *pDest++ = 0x20;
-            return BASE85_OUTPUT;
+            ++pSrc;
+            pDest = cyoBase85OutputX4(pDest, 0x20);
+            dwDestSize += BASE85_OUTPUT;
+            continue;
         }
 #endif
 
-        /* 5 inputs */
-        in1 = (*pSrc++ - 33);
-        in2 = (*pSrc++ - 33);
-        in3 = (*pSrc++ - 33);
-        in4 = (*pSrc++ - 33);
-        in5 = (*pSrc++ - 33);
+        /* 2-5 input chars */
+        padding = 0;
+        pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in1, &padding);
+        if (padding != 0)
+            return 0; /*ERROR - insufficient data*/
+        pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in2, &padding);
+        if (padding != 0)
+            return 0; /*ERROR - insufficient data*/
+        pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in3, &padding);
+        pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in4, &padding);
+        pSrc = (const char*)cyoBase85NextByte((const void*)pSrc, &in5, &padding);
+        dwSrcSize -= (BASE85_INPUT - padding);
 
         /* Validate */
         if (in1 >= 85 || in2 >= 85 || in3 >= 85 || in4 >= 85 || in5 >= 85)
             return 0; /*ERROR - invalid base85 character*/
 
-        /* Output */
-        out = in1;
-        out *= 85;
-        out |= in2;
-        out *= 85;
-        out |= in3;
-        out *= 85;
-        out |= in4;
-        out *= 85;
-        out |= in5;
-        *(unsigned int*)pDest = out;
-        return BASE85_OUTPUT;
+        /* 1-4 output bytes */
+        n = (in1 * cyoBase85Power(85, 4))
+            + (in2 * cyoBase85Power(85, 3))
+            + (in3 * cyoBase85Power(85, 2))
+            + (in4 * cyoBase85Power(85, 1))
+            + in5;
+        shift = 24;
+        do
+        {
+            *pDest++ = (unsigned char)(n >> shift);
+            ++dwDestSize;
+            shift -= 8;
+            ++padding;
+        } while (padding <= 3);
     }
-    else
-        return 0; /*ERROR - null pointer*/
+
+    return dwDestSize;
 }
 
-size_t cyoBase85DecodeBlockW(void* dest, const wchar_t* src)
+size_t cyoBase85DecodeW(void* dest, const wchar_t* src, size_t srcChars)
 {
-    if (dest && src)
+    const wchar_t* pSrc;
+    unsigned char* pDest;
+    size_t dwSrcSize;
+    size_t dwDestSize;
+
+    if (!dest || !src)
+        return 0; /*ERROR - null pointer*/
+
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+    dwSrcSize = srcChars;
+    dwDestSize = 0;
+
+    while (dwSrcSize >= 1)
     {
-        const wchar_t* pSrc = src;
-        unsigned char* pDest = (unsigned char*)dest;
-        wchar_t in1, in2, in3, in4, in5;
-        unsigned int out;
+        unsigned char in1, in2, in3, in4, in5;
+        int padding, shift;
+        unsigned int n;
 
 #if FOLD_ZERO
         if (*pSrc == L'z')
         {
-            *pDest++ = 0;
-            *pDest++ = 0;
-            *pDest++ = 0;
-            *pDest++ = 0;
-            return BASE85_OUTPUT;
+            ++pSrc;
+            pDest = cyoBase85OutputX4(pDest, 0);
+            dwDestSize += BASE85_OUTPUT;
+            continue;
         }
 #endif
 #if FOLD_SPACES
         if (*pSrc == L'y')
         {
-            *pDest++ = 0x20;
-            *pDest++ = 0x20;
-            *pDest++ = 0x20;
-            *pDest++ = 0x20;
-            return BASE85_OUTPUT;
+            ++pSrc;
+            pDest = cyoBase85OutputX4(pDest, 0x20);
+            dwDestSize += BASE85_OUTPUT;
+            continue;
         }
 #endif
 
-        /* 5 inputs */
-        in1 = (*pSrc++ - 33);
-        in2 = (*pSrc++ - 33);
-        in3 = (*pSrc++ - 33);
-        in4 = (*pSrc++ - 33);
-        in5 = (*pSrc++ - 33);
+        /* 2-5 input chars */
+        padding = 0;
+        pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in1, &padding);
+        if (padding != 0)
+            return 0; /*ERROR - insufficient data*/
+        pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in2, &padding);
+        if (padding != 0)
+            return 0; /*ERROR - insufficient data*/
+        pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in3, &padding);
+        pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in4, &padding);
+        pSrc = (const wchar_t*)cyoBase85NextByte((const void*)pSrc, &in5, &padding);
+        dwSrcSize -= (BASE85_INPUT - padding);
 
         /* Validate */
         if (in1 >= 85 || in2 >= 85 || in3 >= 85 || in4 >= 85 || in5 >= 85)
             return 0; /*ERROR - invalid base85 character*/
 
-        /* Output */
-        out = in1;
-        out *= 85;
-        out |= in2;
-        out *= 85;
-        out |= in3;
-        out *= 85;
-        out |= in4;
-        out *= 85;
-        out |= in5;
-        *(unsigned int*)pDest = out;
+        /* 1-4 output bytes */
+        n = (in1 * cyoBase85Power(85, 4))
+            + (in2 * cyoBase85Power(85, 3))
+            + (in3 * cyoBase85Power(85, 2))
+            + (in4 * cyoBase85Power(85, 1))
+            + in5;
+        shift = 24;
+        do
+        {
+            *pDest++ = (unsigned char)(n >> shift);
+            ++dwDestSize;
+            shift -= 8;
+            ++padding;
+        } while (padding <= 3);
+    }
+
+    return dwDestSize;
+}
+
+size_t cyoBase85DecodeBlockA(void* dest, const char* src)
+{
+    const char* pSrc;
+    unsigned char* pDest;
+    unsigned char in1, in2, in3, in4, in5;
+    unsigned int out;
+
+    if (!dest || !src)
+        return 0; /*ERROR - null pointer*/
+
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+
+#if FOLD_ZERO
+    if (*pSrc == 'z')
+    {
+        pDest = cyoBase85OutputX4(pDest, 0);
         return BASE85_OUTPUT;
     }
-    else
+#endif
+#if FOLD_SPACES
+    if (*pSrc == 'y')
+    {
+        pDest = cyoBase85OutputX4(pDest, 0x20);
+        return BASE85_OUTPUT;
+    }
+#endif
+
+    /* 5 inputs */
+    in1 = (*pSrc++ - 33);
+    in2 = (*pSrc++ - 33);
+    in3 = (*pSrc++ - 33);
+    in4 = (*pSrc++ - 33);
+    in5 = (*pSrc++ - 33);
+
+    /* Validate */
+    if (in1 >= 85 || in2 >= 85 || in3 >= 85 || in4 >= 85 || in5 >= 85)
+        return 0; /*ERROR - invalid base85 character*/
+
+    /* Output */
+    out = in1;
+    out *= 85;
+    out |= in2;
+    out *= 85;
+    out |= in3;
+    out *= 85;
+    out |= in4;
+    out *= 85;
+    out |= in5;
+    *(unsigned int*)pDest = out;
+    return BASE85_OUTPUT;
+}
+
+size_t cyoBase85DecodeBlockW(void* dest, const wchar_t* src)
+{
+    const wchar_t* pSrc;
+    unsigned char* pDest;
+    wchar_t in1, in2, in3, in4, in5;
+    unsigned int out;
+
+    if (!dest || !src)
         return 0; /*ERROR - null pointer*/
+
+    pSrc = src;
+    pDest = (unsigned char*)dest;
+
+#if FOLD_ZERO
+    if (*pSrc == L'z')
+    {
+        pDest = cyoBase85OutputX4(pDest, 0);
+        return BASE85_OUTPUT;
+    }
+#endif
+#if FOLD_SPACES
+    if (*pSrc == L'y')
+    {
+        pDest = cyoBase85OutputX4(pDest, 0x20);
+        return BASE85_OUTPUT;
+    }
+#endif
+
+    /* 5 inputs */
+    in1 = (*pSrc++ - 33);
+    in2 = (*pSrc++ - 33);
+    in3 = (*pSrc++ - 33);
+    in4 = (*pSrc++ - 33);
+    in5 = (*pSrc++ - 33);
+
+    /* Validate */
+    if (in1 >= 85 || in2 >= 85 || in3 >= 85 || in4 >= 85 || in5 >= 85)
+        return 0; /*ERROR - invalid base85 character*/
+
+    /* Output */
+    out = in1;
+    out *= 85;
+    out |= in2;
+    out *= 85;
+    out |= in3;
+    out *= 85;
+    out |= in4;
+    out *= 85;
+    out |= in5;
+    *(unsigned int*)pDest = out;
+    return BASE85_OUTPUT;
 }
